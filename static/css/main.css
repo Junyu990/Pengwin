@@ -1,0 +1,53 @@
+main {
+    padding: 20px;
+    box-sizing: border-box;
+}
+
+/* Sidebar */
+.sidebar {
+    position: fixed;
+    top: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 100;
+    padding: 48px 0 0;
+    box-shadow: inset -1px 0 0 rgba(0, 0, 0, .1);
+    background-color: #f8f9fa; /* Light gray background */
+}
+
+/* Sidebar header */
+.sidebar h5 {
+    font-size: 1.2rem;
+    font-weight: bold;
+    color: #333;
+}
+
+/* Sidebar navigation links */
+.sidebar .nav-link {
+    padding: 10px 20px;
+    color: #555;
+    transition: all 0.3s ease;
+}
+
+/* Sidebar navigation links hover effect */
+.sidebar .nav-link:hover {
+    background-color: #e9ecef; /* Light gray background on hover */
+    color: #333;
+}
+
+/* Active navigation link */
+.sidebar .nav-link.active {
+    background-color: #007bff; /* Bootstrap primary color */
+    color: #fff;
+}
+
+/* Active navigation link hover effect */
+.sidebar .nav-link.active:hover {
+    background-color: #007bff; /* Maintain primary color on hover */
+}
+
+/* Divider between sidebar sections */
+.sidebar-divider {
+    margin-top: 20px;
+    border-top: 1px solid #ddd; /* Light gray border */
+}
