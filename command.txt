@@ -1,0 +1,2 @@
+.venv/bin/activate (Linux/macOS) 
+.venv\Scripts\Activate.ps1
