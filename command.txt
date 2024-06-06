@@ -1,2 +1,8 @@
 .venv/bin/activate (Linux/macOS) 
 .venv\Scripts\Activate.ps1
+
+
+python -m pip install flask
+
+python -m pip intsall Flask-SQLAlchemy
+
