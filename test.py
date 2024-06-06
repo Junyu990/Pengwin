@@ -8,7 +8,7 @@ app = Flask(__name__)
 app.static_folder = 'static'
 
 # Firebase initialization
-cred = credentials.Certificate("static/pengwin-d7fcd-firebase-adminsdk-dc2pi-34b51f5929.json")  # Adjust the path as necessary
+cred = credentials.Certificate("pengwin-d7fcd-firebase-adminsdk-dc2pi-34b51f5929.json")  # Adjust the path as necessary
 firebase_admin.initialize_app(cred)
 
 db = firestore.client()
@@ -46,7 +46,8 @@ def add_employee():
 
         # Add employee data to Firestore
         try:
-            db.collection('employees').add(employee_data)
+            doc_ref = db.collection('employees').document("name") # change to add username into document !!!!!!!!!!!
+            doc_ref.set(employee_data) # !!!!!!!!!!!!!!!
             print("Employee added to Firestore successfully")  # Debug statement
         except Exception as e:
             print("Error adding employee to Firestore:", e)  # Debug statement
