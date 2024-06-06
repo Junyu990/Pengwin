@@ -4,5 +4,5 @@
 
 python -m pip install flask
 
-python -m pip intsall Flask-SQLAlchemy
+python -m pip install Flask-SQLAlchemy
 
