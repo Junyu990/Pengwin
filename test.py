@@ -19,8 +19,9 @@ def index():
 
 @app.route('/employees')
 def employee_list():
-    employees_ref = db.collection('employees')
-    docs = employees_ref.stream()
+    employee_ref = db.collection("employees")
+    docs = employee_ref.stream()
+
     employees = [doc.to_dict() for doc in docs]
     return render_template('employee_list.html', employees=employees)
 
