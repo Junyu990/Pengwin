@@ -79,17 +79,38 @@ def delete_employee(employee_id):
         print(f"Error deleting employee with ID {employee_id}:", e)  # Debug statement
     return redirect(url_for('employee_list'))
 
-@app.route('/payroll')
-def payroll():
-    return render_template('payroll.html')
+@app.route('/overview')
+def overview():
+    return render_template('overview.html')
 
-@app.route('/employee/<string:employee_id>/leaves')
-def view_leaves(employee_id):
-    leave_ref = db.collection('employees').document(employee_id).collection('leaves')
-    docs = leave_ref.stream()
+@app.route('/pending-salaries')
+def pending_salaries():
+    return render_template('pending_salaries.html')
 
-    leaves = {doc.id: doc.to_dict() for doc in docs}
-    return render_template('view_leaves.html', employee_id=employee_id, leaves=leaves)
+@app.route('/tax-authorisation')
+def tax_authorisation():
+    return render_template('tax_authorisation.html')
+
+@app.route('/manage-pensions')
+def manage_pensions():
+    return render_template('manage_pensions.html')
+
+@app.route('/leaves')
+
+def view_all_leaves():
+    employees_ref = db.collection("employees")
+    employees = employees_ref.stream()
+    
+    all_leaves = []
+    
+    for employee in employees:
+        employee_data = employee.to_dict()
+        employee_id = employee.id
+        leave_ref = employees_ref.document(employee_id).collection('leaves')
+        leaves = {doc.id: doc.to_dict() for doc in leave_ref.stream()}
+        all_leaves.append({'name': employee_data['name'], 'leaves': leaves})
+    
+    return render_template('view_all_leaves.html', all_leaves=all_leaves)
 
 
 
