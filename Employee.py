@@ -1,7 +1,7 @@
 from datetime import date
 
 class Employee:
-    def __init__(self, employee_id, password, name, phone_number, email, address, wallet_address, salary, date_of_birth, citizenship, employment_start_date, job_title, branch):
+    def __init__(self, employee_id, password, name, phone_number, email, address, wallet_address, salary, date_of_birth, citizenship, employment_start_date, job_title, branch, annual_leave, unpaid_leave, Medical_leave, Compassionate_leave ):
         self.employee_id = employee_id                # PK
         self.password = password
         self.name = name
@@ -15,6 +15,11 @@ class Employee:
         self.employment_start_date = employment_start_date
         self.job_title = job_title
         self.branch = branch
+        self.annual_leave = annual_leave
+        self.unpaid_leave = unpaid_leave
+        self.Medical_leave = Medical_leave
+        self.Compassionate_leave = Compassionate_leave
+
 
     def __str__(self):
         return f"Employee[ID={self.employee_id}, Name={self.name}, Email={self.email}, Job Title={self.job_title}, Branch={self.branch}]"
