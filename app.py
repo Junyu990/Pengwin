@@ -1,30 +1,17 @@
 from flask import Flask, render_template, request, redirect, url_for
-from flask_sqlalchemy import SQLAlchemy
+import firebase_admin
+from firebase_admin import credentials, firestore
 from datetime import date
+import json
 
 app = Flask(__name__)
-app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///employees.db'
-app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-db = SQLAlchemy(app)
 app.static_folder = 'static'
 
-class Employee(db.Model):
-    employee_id = db.Column(db.Integer, primary_key=True)
-    password = db.Column(db.String(80), nullable=False)
-    name = db.Column(db.String(120), nullable=False)
-    phone_number = db.Column(db.String(20), nullable=False)
-    email = db.Column(db.String(120), unique=True, nullable=False)
-    address = db.Column(db.String(200), nullable=False)
-    wallet_address = db.Column(db.String(200), nullable=False)
-    salary = db.Column(db.Float, nullable=False)
-    date_of_birth = db.Column(db.Date, nullable=False)
-    citizenship = db.Column(db.String(100), nullable=False)
-    employment_start_date = db.Column(db.Date, nullable=False)
-    job_title = db.Column(db.String(100), nullable=False)
-    branch = db.Column(db.String(100), nullable=False)
+# Firebase initialization
+cred = credentials.Certificate("pengwin-d7fcd-firebase-adminsdk-dc2pi-34b51f5929.json")  # Adjust the path as necessary
+firebase_admin.initialize_app(cred)
 
-    def __repr__(self):
-        return f"<Employee {self.name}>"
+db = firestore.client()
 
 @app.route('/')
 def index():
@@ -32,48 +19,52 @@ def index():
 
 @app.route('/employees')
 def employee_list():
-    employees = Employee.query.all()
+    employee_ref = db.collection("employees")
+    docs = employee_ref.stream()
+
+    employees = [doc.to_dict() for doc in docs]
     return render_template('employee_list.html', employees=employees)
 
 @app.route('/employee/add', methods=['GET', 'POST'])
 def add_employee():
     if request.method == 'POST':
-        password = request.form['password']
-        name = request.form['name']
-        phone_number = request.form['phone_number']
-        email = request.form['email']
-        address = request.form['address']
-        wallet_address = request.form['wallet_address']
-        salary = float(request.form['salary'])
-        date_of_birth = date.fromisoformat(request.form['date_of_birth'])
-        citizenship = request.form['citizenship']
-        employment_start_date = date.fromisoformat(request.form['employment_start_date'])
-        job_title = request.form['job_title']
-        branch = request.form['branch']
+        employee_data = {
+            'password': request.form['password'],
+            'name': request.form['name'],
+            'phone_number': request.form['phone_number'],
+            'email': request.form['email'],
+            'address': request.form['address'],
+            'wallet_address': request.form['wallet_address'],
+            'salary': float(request.form['salary']),
+            'date_of_birth': date.fromisoformat(request.form['date_of_birth']).isoformat(),
+            'citizenship': request.form['citizenship'],
+            'employment_start_date': date.fromisoformat(request.form['employment_start_date']).isoformat(),
+            'job_title': request.form['job_title'],
+            'branch': request.form['branch']
+        }
 
-        new_employee = Employee(
-            password=password, name=name, phone_number=phone_number, email=email, address=address, wallet_address=wallet_address,
-            salary=salary, date_of_birth=date_of_birth, citizenship=citizenship, employment_start_date=employment_start_date,
-            job_title=job_title, branch=branch
-        )
-        db.session.add(new_employee)
-        db.session.commit()
+        print("Collected employee data:", json.dumps(employee_data, indent=2))  # Debug statement
+
+        # Add employee data to Firestore
+        try:
+            doc_ref = db.collection('employees').document(request.form['name']) # change to add username into document !!!!!!!!!!!
+            doc_ref.set(employee_data) # !!!!!!!!!!!!!!!
+            print("Employee added to Firestore successfully")  # Debug statement
+        except Exception as e:
+            print("Error adding employee to Firestore:", e)  # Debug statement
+
         return redirect(url_for('employee_list'))
     return render_template('add_employee.html')
 
-@app.route('/employee/delete/<int:employee_id>', methods=['POST'])
+@app.route('/employee/delete/<string:employee_id>', methods=['POST'])
 def delete_employee(employee_id):
-    employee = Employee.query.get_or_404(employee_id)
-    db.session.delete(employee)
-    db.session.commit()
+    employee_ref = db.collection('employees').document(employee_id)
+    try:
+        employee_ref.delete()
+        print(f"Employee with ID {employee_id} deleted successfully")  # Debug statement
+    except Exception as e:
+        print(f"Error deleting employee with ID {employee_id}:", e)  # Debug statement
     return redirect(url_for('employee_list'))
 
 if __name__ == '__main__':
-    with app.app_context():
-        db.create_all()
     app.run(debug=True)
-
-
-
-#test2
-#test3
