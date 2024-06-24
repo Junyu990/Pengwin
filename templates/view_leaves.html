@@ -1,0 +1,21 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1>Leave Data for Employee: {{ employee_id }}</h1>
+<table>
+    <tr>
+        <th>Leave Type</th>
+        <th>Allowed</th>
+        <th>Taken</th>
+    </tr>
+    {% for leave_type, data in leaves.items() %}
+    <tr>
+        <td>{{ leave_type }}</td>
+        <td>{{ data.allowed }}</td>
+        <td>{{ data.taken }}</td>
+    </tr>
+    {% endfor %}
+</table>
+<a href="{{ url_for('employee_list') }}">Back to Employee List</a>
+
+{% endblock %}
