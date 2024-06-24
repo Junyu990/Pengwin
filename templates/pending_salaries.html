@@ -2,7 +2,9 @@
 
 {% block content %}
 
-<h1>Payroll Management System</h1>
+<link rel="stylesheet" href="{{ url_for('static', filename='javascript/salaries.js') }}">
+
+{% block title %}<h1>Pending Salaries - HR Payroll System</h1>{% endblock %}
 
 <!-- Horizontal Navbar -->
 <nav class="navbar navbar-expand-lg navbar-light bg-light">
@@ -28,7 +30,143 @@
 </nav>
 
 <!-- Page Content -->
-<p>Welcome to the Pending Salaries page.</p>
+<div class="container-fluid">
+    <div class="row">
+        <!-- Left Content (Table) -->
+        <div class="col-lg-9">
+            <div class="table-responsive">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th></th> <!-- Empty header for checkbox -->
+                            <th>Name</th>
+                            <th>Request Date</th>
+                            <th>Location</th>
+                            <th>Status</th>
+                            <th>Salary</th>
+                            <th>Total Paid This Year</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for salary in pending_salaries %}
+                        <tr>
+                            <td><input type="checkbox" name="employee_id" value="{{ salary.id }}"></td>
+                            <td>{{ salary.name }}</td>
+                            <td>{{ salary.request_date }}</td>
+                            <td>{{ salary.location }}</td>
+                            <td>{{ salary.status }}</td>
+                            <td>${{ salary.salary }}</td>
+                            <td>${{ salary.total_paid_this_year }}</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
 
+        <!-- Right Container (Sliding Panel) -->
+        <div id="rightPanel" class="col-lg-3 bg-light" style="position: fixed; right: -600px; top: 0; bottom: 0; z-index: 1050; transition: right 0.3s ease-out;">
+            <div class="d-flex justify-content-between align-items-center p-3 border-bottom">
+                <h5 class="my-0">Execute Payroll</h5>
+                <button id="closePanelBtn" class="btn btn-link p-0 m-0">&times;</button>
+            </div>
+            <div id="payrollDetails" class="p-3">
+                <!-- Information Box -->
+                <div class="alert alert-info d-flex align-items-center" role="alert">
+                    <i class="fas fa-info-circle mr-2"></i>
+                    <div>
+                        <strong>Choose the employees for payroll distribution</strong>
+                        <p>You can add as many employees as you like, and enter your authorization key to execute.</p>
+                    </div>
+                </div>
+                
+                <!-- Payroll Date -->
+                <div class="alert alert-secondary" role="alert">
+                    <strong>Payroll Date:</strong> <span id="payrollDate">{{ payroll_date }}</span>
+                </div>
+
+                <!-- Selected Employees List -->
+                <h6>Selected Employees (<span id="selectedCount">0</span>)</h6>
+                <ul id="employeeList" class="list-group mb-3">
+                    <!-- Dynamically filled list of selected employees -->
+                </ul>
+
+                <!-- Total Payment Amount -->
+                <div class="alert alert-secondary" role="alert">
+                    <strong>Total Payment Amount:</strong> $<span id="totalPayment">0.00</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Toggle Panel Button -->
+<button id="togglePanelBtn" class="btn btn-primary mt-3">Execute Payroll</button>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const rightPanel = document.getElementById('rightPanel');
+        const togglePanelBtn = document.getElementById('togglePanelBtn');
+        const closePanelBtn = document.getElementById('closePanelBtn');
+        const employeeList = document.getElementById('employeeList');
+        const selectedCount = document.getElementById('selectedCount');
+        const totalPayment = document.getElementById('totalPayment');
+        const checkboxes = document.querySelectorAll('input[name="employee_id"]');
+        let selectedEmployees = [];
+    
+        // Set payroll date to current date
+        const payrollDate = document.getElementById('payrollDate');
+        payrollDate.textContent = new Date().toLocaleDateString();
+    
+        function showPanel() {
+            rightPanel.style.right = '0';
+            togglePanelBtn.style.display = 'none';
+        }
+    
+        function hidePanel() {
+            rightPanel.style.right = '-600px';
+            togglePanelBtn.style.display = 'block';
+        }
+    
+        function updateSelectedEmployees() {
+            selectedEmployees = [];
+            let totalPaymentAmount = 0;
+            checkboxes.forEach(checkbox => {
+                if (checkbox.checked) {
+                    const row = checkbox.closest('tr');
+                    const name = row.querySelector('td:nth-child(2)').textContent;
+                    const salary = parseFloat(row.querySelector('td:nth-child(6)').textContent.replace('$', ''));
+                    selectedEmployees.push({ name, salary });
+                    totalPaymentAmount += salary;
+                }
+            });
+    
+            selectedCount.textContent = selectedEmployees.length;
+            totalPayment.textContent = totalPaymentAmount.toFixed(2);
+    
+            // Update employee list in the panel
+            employeeList.innerHTML = '';
+            selectedEmployees.forEach(employee => {
+                const listItem = document.createElement('li');
+                listItem.className = 'list-group-item';
+                listItem.textContent = employee.name;
+                employeeList.appendChild(listItem);
+            });
+        }
+    
+        togglePanelBtn.addEventListener('click', showPanel);
+        closePanelBtn.addEventListener('click', hidePanel);
+    
+        checkboxes.forEach(checkbox => {
+            checkbox.addEventListener('change', updateSelectedEmployees);
+        });
+    
+        document.addEventListener('click', function(event) {
+            if (!rightPanel.contains(event.target) && !togglePanelBtn.contains(event.target)) {
+                hidePanel();
+            }
+        });
+    });
+</script>
 
 {% endblock %}

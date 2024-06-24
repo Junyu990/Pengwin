@@ -28,7 +28,136 @@
 </nav>
 
 <!-- Page Content -->
-<p>Welcome to the Overview page.</p>
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-lg-6">
+            <div class="form-group">
+                <label for="yearSelect">Year:</label>
+                <select class="form-control" id="yearSelect">
+                    <option value="2022">2022</option>
+                    <option value="2023">2023</option>
+                    <option value="2024">2024</option>
+                </select>
+            </div>
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Payroll Report</h5>
+                    <!-- Include your graph here -->
+                    <img src="{{ url_for('static', filename='your_graph_image.png') }}" class="img-fluid" alt="Graph">
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-6">
+            <div class="form-group">
+                <label for="countrySelect">Country:</label>
+                <select class="form-control" id="countrySelect">
+                    <option value="Singapore">Singapore</option>
+                    <option value="Korea">Korea</option>
+                    <option value="Thailand">Thailand</option>
+                </select>
+            </div>
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Pay Summary</h5>
+                    <table class="table table-bordered">
+                        <tbody>
+                            <tr>
+                                <th>Pay Period</th>
+                                <td>1/05/2024 - 31/05/2024</td>
+                            </tr>
+                            <tr>
+                                <th>Basic Pay</th>
+                                <td>200,000 USD</td>
+                            </tr>
+                            <tr>
+                                <th>Total Bonuses</th>
+                                <td>20,000 USD</td>
+                            </tr>
+                            <tr>
+                                <th>CPF Contributions (Company)</th>
+                                <td>37,400 USD</td>
+                            </tr>
+                            <tr>
+                                <th>Total Deductions</th>
+                                <td>-7,400 USD</td>
+                            </tr>
+                            <tr>
+                                <th>Total Claims</th>
+                                <td>20,000 USD</td>
+                            </tr>
+                            <tr>
+                                <th>Total to be Paid</th>
+                                <td>270,000 USD</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
 
+    <div class="row mt-4">
+        <div class="col-lg-12">
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Payroll Report</h5>
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Employee</th>
+                                <th>Employee ID</th>
+                                <th>Gross Pay</th>
+                                <th>Deductions</th>
+                                <th>Bonuses</th>
+                                <th>Claims</th>
+                                <th>Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>John Chin</td>
+                                <td>1</td>
+                                <td>3,750 USD</td>
+                                <td>-100 USD</td>
+                                <td>300 USD</td>
+                                <td>30 USD</td>
+                                <td>
+                                    <a href="#" class="btn btn-sm btn-primary">Edit</a>
+                                    <a href="#" class="btn btn-sm btn-danger">Delete</a>
+                                </td>
+                            </tr>
+                            <!-- Add more rows for other employees -->
+                            <tr>
+                                <td>Jane Doe</td>
+                                <td>2</td>
+                                <td>4,200 USD</td>
+                                <td>-150 USD</td>
+                                <td>250 USD</td>
+                                <td>20 USD</td>
+                                <td>
+                                    <a href="#" class="btn btn-sm btn-primary">Edit</a>
+                                    <a href="#" class="btn btn-sm btn-danger">Delete</a>
+                                </td>
+                            </tr>
+                            <tr>
+                                <td>Michael Johnson</td>
+                                <td>3</td>
+                                <td>3,500 USD</td>
+                                <td>-80 USD</td>
+                                <td>200 USD</td>
+                                <td>25 USD</td>
+                                <td>
+                                    <a href="#" class="btn btn-sm btn-primary">Edit</a>
+                                    <a href="#" class="btn btn-sm btn-danger">Delete</a>
+                                </td>
+                            </tr>
+                            <!-- Add more dummy rows as needed -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
 
 {% endblock %}

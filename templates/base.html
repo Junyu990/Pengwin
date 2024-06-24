@@ -6,6 +6,9 @@
     <title>HR Payroll System</title>
     <link href="https://maxcdn.bootstrapcdn.com/bootstrap/4.5.2/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="{{ url_for('static', filename='css/main.css') }}">
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.15.3/css/all.min.css">
+
 </head>
 <body>
     <div class="container-fluid">
@@ -24,7 +27,7 @@
                             <a class="nav-link" href="{{ url_for('overview') }}">Payroll</a>
                         </li>
                         <li class="nav-item">
-                            <a class="nav-link" href="{{ url_for('view_all_leaves') }}">Leaves</a>
+                            <a class="nav-link" href="{{ url_for('leave_overview') }}">Leaves</a>
                         </li>
                         <li class="nav-item">
                             <a class="nav-link" href="{{ url_for('view_all_leaves') }}">Claims</a>

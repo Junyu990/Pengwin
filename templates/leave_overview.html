@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+
+{% block content %}
+
+<h1>Leave Management</h1>
+<hr>
+<nav class="navbar navbar-expand-md navbar-light bg-light">
+    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav">
+            <li class="nav-item">
+                <a class="nav-link {% if request.path == '/leave/overview' %}active{% endif %}" href="{{ url_for('leave_overview') }}">Overview</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {% if request.path == '/leave' %}active{% endif %}" href="{{ url_for('view_all_leaves') }}">View Employee Leave Balance</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {% if request.path == '/leave/pending' %}active{% endif %}" href="{{ url_for('pending_leave_request') }}">View Pending Leave</a>
+            </li>
+        </ul>
+    </div>
+</nav>
+
+
+
+{% endblock %}

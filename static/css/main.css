@@ -47,34 +47,9 @@ main {
 }
 
 /* Divider between sidebar sections */
-.sidebar-divider {
-    margin-top: 20px;
-    border-top: 1px solid #ddd; /* Light gray border */
-}
 
-/* Navbar styling */
-.navbar {
-    overflow: hidden;
-    background-color: #f1f1f1;
-}
 
-.navbar a {
-    float: left;
-    display: block;
-    color: black;
-    text-align: center;
-    padding: 14px 20px;
-    text-decoration: none;
-}
 
-.navbar a:hover {
-    background-color: #ddd;
-}
-
-.navbar a.active {
-    background-color: #4CAF50;
-    color: white;
-}
 
 /* Leave table styling */
 .leave-table {
@@ -84,7 +59,7 @@ main {
 
 .leave-table th, .leave-table td {
     border: 1px solid #dddddd;
-    text-align: left;
+    text-align: center;
     padding: 8px;
 }
 
@@ -103,4 +78,26 @@ main {
     height: 20px;
     margin-right: 10px;
     vertical-align: middle;
+}
+
+/* Styling for the horizontal navbar */
+.navbar-nav .nav-link {
+    color: #333;
+}
+
+.navbar-nav .nav-link.active {
+    color: #007bff; /* Active link color */
+    font-weight: bold; /* Bold text for active link */
+}
+
+/* Styles for sliding right panel */
+#rightPanel {
+    max-width: 600px;
+    overflow-y: auto; /* Enable scrolling if content exceeds panel height */
+    box-shadow: -1px 0 3px rgba(0, 0, 0, 0.1); /* Optional: Add shadow for depth effect */
+}
+
+/* Adjust table width to fit remaining space */
+.table-responsive {
+    overflow-x: auto; /* Enable horizontal scrolling if table exceeds container width */
 }
