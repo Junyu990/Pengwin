@@ -44,12 +44,25 @@ def add_employee():
         }
 
         print("Collected employee data:", json.dumps(employee_data, indent=2))  # Debug statement
+        
+        
+        # Leave data initialization
+        leave_data = {
+            'Annual Leave': {'allowed': 14, 'taken': 0},
+            'Unpaid Leave': {'allowed': 14, 'taken': 0},
+            'Compassionate Leave': {'allowed': 14, 'taken': 0},
+            'Medical Leave': {'allowed': 14, 'taken': 0}
+        }
+        
 
         # Add employee data to Firestore
         try:
             doc_ref = db.collection('employees').document(request.form['name']) # change to add username into document !!!!!!!!!!!
             doc_ref.set(employee_data) # !!!!!!!!!!!!!!!
             print("Employee added to Firestore successfully")  # Debug statement
+            for leave_type, data in leave_data.items():
+                doc_ref.collection('leaves').document(leave_type).set(data)
+            print("Employee and leave data added to Firestore successfully")  # Debug statement
         except Exception as e:
             print("Error adding employee to Firestore:", e)  # Debug statement
 
@@ -65,6 +78,17 @@ def delete_employee(employee_id):
     except Exception as e:
         print(f"Error deleting employee with ID {employee_id}:", e)  # Debug statement
     return redirect(url_for('employee_list'))
+
+
+@app.route('/employee/<string:employee_id>/leaves')
+def view_leaves(employee_id):
+    leave_ref = db.collection('employees').document(employee_id).collection('leaves')
+    docs = leave_ref.stream()
+
+    leaves = {doc.id: doc.to_dict() for doc in docs}
+    return render_template('view_leaves.html', employee_id=employee_id, leaves=leaves)
+
+
 
 if __name__ == '__main__':
     app.run(debug=True)
