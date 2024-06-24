@@ -1,15 +1,73 @@
 {% extends "base.html" %}
 
 {% block content %}
-<h1>Employee List</h1>
-<ul>
-    {% for employee in employees %}
-    <li>
-        {{ employee.name }} - {{ employee.job_title }} - {{ employee.branch }}
-        <form action="{{ url_for('delete_employee', employee_id=employee.employee_id) }}" method="post">
-            <button type="submit">Delete</button>
-        </form>
-    </li>
-    {% endfor %}
-</ul>
+<h1>Employee Account Management</h1>
+<table>
+    <thead>
+        <tr>
+            <th>Name</th>
+            <th>Job Title</th>
+            <th>Employee ID</th>
+            <th>Salary</th>
+            <th>Branch</th>
+            <th>Email</th>
+            <th>Wallet Address</th>
+            <th>Actions</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for employee in employees %}
+        <tr>
+            <td>{{ employee.name }}</td>
+            <td>{{ employee.job_title }}</td>
+            <td>{{ employee.employee_id }}</td>
+            <td>{{ employee.salary }}</td>
+            <td>{{ employee.branch }}</td>
+            <td>{{ employee.email }}</td>
+            <td>{{ employee.wallet_address }}</td>
+            <td>
+                <form action="{{ url_for('delete_employee', employee_id=employee.employee_id) }}" method="post">
+                    <!-- If CSRF protection is enabled -->
+                    {% if csrf_token %}
+                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    {% endif %}
+                    <button type="submit">Delete</button>
+                </form>
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+<style>
+    table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-bottom: 20px;
+    }
+    th, td {
+        border: 1px solid #ddd;
+        padding: 8px;
+        text-align: left;
+    }
+    th {
+        background-color: #f2f2f2;
+    }
+    tr:nth-child(even) {
+        background-color: #f9f9f9;
+    }
+    tr:hover {
+        background-color: #f1f1f1;
+    }
+    button {
+        background-color: #ff4d4d;
+        color: white;
+        border: none;
+        padding: 5px 10px;
+        cursor: pointer;
+    }
+    button:hover {
+        background-color: #ff1a1a;
+    }
+</style>
 {% endblock %}
