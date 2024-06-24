@@ -66,5 +66,9 @@ def delete_employee(employee_id):
         print(f"Error deleting employee with ID {employee_id}:", e)  # Debug statement
     return redirect(url_for('employee_list'))
 
+@app.route('/payroll')
+def payroll():
+    return render_template('payroll.html')
+
 if __name__ == '__main__':
     app.run(debug=True)
