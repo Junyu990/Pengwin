@@ -47,7 +47,7 @@ def add_employee():
 
         # Add employee data to Firestore
         try:
-            doc_ref = db.collection('employees').document("name") # change to add username into document !!!!!!!!!!!
+            doc_ref = db.collection('employees').document(request.form['name']) # change to add username into document !!!!!!!!!!!
             doc_ref.set(employee_data) # !!!!!!!!!!!!!!!
             print("Employee added to Firestore successfully")  # Debug statement
         except Exception as e:
