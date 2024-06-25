@@ -100,7 +100,6 @@ pending_salaries_data = [
     {
         'id': 2,
         'name': 'Jane Smith',
-        'request_date': '2024-06-02',
         'location': 'Los Angeles',
         'status': 'Pending',
         'salary': 6000,
@@ -109,7 +108,6 @@ pending_salaries_data = [
     {
         'id': 3,
         'name': 'Michael Johnson',
-        'request_date': '2024-06-03',
         'location': 'Chicago',
         'status': 'Pending',
         'salary': 5500,
@@ -118,7 +116,22 @@ pending_salaries_data = [
     {
         'id': 4,
         'name': 'Michael Johnson',
-        'request_date': '2024-06-03',
+        'location': 'Chicago',
+        'status': 'Pending',
+        'salary': 5500,
+        'total_paid_this_year': 32000
+    },
+    {
+        'id': 5,
+        'name': 'Michael Johnson',
+        'location': 'Chicago',
+        'status': 'Pending',
+        'salary': 5500,
+        'total_paid_this_year': 32000
+    },
+    {
+        'id': 6,
+        'name': 'Michael Johnson',
         'location': 'Chicago',
         'status': 'Pending',
         'salary': 5500,

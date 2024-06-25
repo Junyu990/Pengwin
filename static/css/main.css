@@ -92,7 +92,7 @@ main {
 
 /* Styles for sliding right panel */
 #rightPanel {
-    max-width: 600px;
+    max-width: 400px;
     overflow-y: auto; /* Enable scrolling if content exceeds panel height */
     box-shadow: -1px 0 3px rgba(0, 0, 0, 0.1); /* Optional: Add shadow for depth effect */
 }

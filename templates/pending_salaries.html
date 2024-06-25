@@ -2,9 +2,8 @@
 
 {% block content %}
 
-<link rel="stylesheet" href="{{ url_for('static', filename='javascript/salaries.js') }}">
-
 {% block title %}<h1>Pending Salaries - HR Payroll System</h1>{% endblock %}
+<hr>
 
 <!-- Horizontal Navbar -->
 <nav class="navbar navbar-expand-lg navbar-light bg-light">
@@ -40,7 +39,6 @@
                         <tr>
                             <th></th> <!-- Empty header for checkbox -->
                             <th>Name</th>
-                            <th>Request Date</th>
                             <th>Location</th>
                             <th>Status</th>
                             <th>Salary</th>
@@ -52,7 +50,6 @@
                         <tr>
                             <td><input type="checkbox" name="employee_id" value="{{ salary.id }}"></td>
                             <td>{{ salary.name }}</td>
-                            <td>{{ salary.request_date }}</td>
                             <td>{{ salary.location }}</td>
                             <td>{{ salary.status }}</td>
                             <td>${{ salary.salary }}</td>
@@ -103,70 +100,7 @@
 <!-- Toggle Panel Button -->
 <button id="togglePanelBtn" class="btn btn-primary mt-3">Execute Payroll</button>
 
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const rightPanel = document.getElementById('rightPanel');
-        const togglePanelBtn = document.getElementById('togglePanelBtn');
-        const closePanelBtn = document.getElementById('closePanelBtn');
-        const employeeList = document.getElementById('employeeList');
-        const selectedCount = document.getElementById('selectedCount');
-        const totalPayment = document.getElementById('totalPayment');
-        const checkboxes = document.querySelectorAll('input[name="employee_id"]');
-        let selectedEmployees = [];
-    
-        // Set payroll date to current date
-        const payrollDate = document.getElementById('payrollDate');
-        payrollDate.textContent = new Date().toLocaleDateString();
-    
-        function showPanel() {
-            rightPanel.style.right = '0';
-            togglePanelBtn.style.display = 'none';
-        }
-    
-        function hidePanel() {
-            rightPanel.style.right = '-600px';
-            togglePanelBtn.style.display = 'block';
-        }
-    
-        function updateSelectedEmployees() {
-            selectedEmployees = [];
-            let totalPaymentAmount = 0;
-            checkboxes.forEach(checkbox => {
-                if (checkbox.checked) {
-                    const row = checkbox.closest('tr');
-                    const name = row.querySelector('td:nth-child(2)').textContent;
-                    const salary = parseFloat(row.querySelector('td:nth-child(6)').textContent.replace('$', ''));
-                    selectedEmployees.push({ name, salary });
-                    totalPaymentAmount += salary;
-                }
-            });
-    
-            selectedCount.textContent = selectedEmployees.length;
-            totalPayment.textContent = totalPaymentAmount.toFixed(2);
-    
-            // Update employee list in the panel
-            employeeList.innerHTML = '';
-            selectedEmployees.forEach(employee => {
-                const listItem = document.createElement('li');
-                listItem.className = 'list-group-item';
-                listItem.textContent = employee.name;
-                employeeList.appendChild(listItem);
-            });
-        }
-    
-        togglePanelBtn.addEventListener('click', showPanel);
-        closePanelBtn.addEventListener('click', hidePanel);
-    
-        checkboxes.forEach(checkbox => {
-            checkbox.addEventListener('change', updateSelectedEmployees);
-        });
-    
-        document.addEventListener('click', function(event) {
-            if (!rightPanel.contains(event.target) && !togglePanelBtn.contains(event.target)) {
-                hidePanel();
-            }
-        });
-    });
-</script>
+<script src="{{ url_for('static', filename='js/salaries.js') }}"></script>
+
 
 {% endblock %}
