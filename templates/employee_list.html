@@ -30,6 +30,7 @@
             <th>Salary</th>
             <th>Branch</th>
             <th>Email</th>
+            <th>Password</th>
             <th>Wallet Address</th>
             <th>Actions</th>
         </tr>
@@ -43,6 +44,7 @@
             <td>{{ employee.salary }}</td>
             <td>{{ employee.branch }}</td>
             <td>{{ employee.email }}</td>
+            <td>{{ employee.password }}</td>
             <td>{{ employee.wallet_address }}</td>
             <td>
                 <form action="{{ url_for('delete_employee', employee_id=employee.employee_id) }}" method="post">

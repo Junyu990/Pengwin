@@ -10,3 +10,7 @@ python -m pip install firebase-admin google-cloud-firestore
 
 <-link for firestore python->
 https://firebase.google.com/docs/firestore/quickstart#python
+
+
+  
+        

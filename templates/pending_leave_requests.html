@@ -1,0 +1,67 @@
+{% extends "base.html" %}
+
+{% block content %}
+<h1>Leave Management</h1>
+<hr>
+<nav class="navbar navbar-expand-md navbar-light bg-light">
+    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav">
+            <li class="nav-item">
+                <a class="nav-link {% if request.path == '/leave/overview' %}active{% endif %}" href="{{ url_for('leave_overview') }}">Overview</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {% if request.path == '/leaves' %}active{% endif %}" href="{{ url_for('view_all_leaves') }}">View Employee Leave Balance</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {% if request.path == '/pending_leave_requests' %}active{% endif %}" href="{{ url_for('pending_leave_requests') }}">Pending Leave Requests</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {% if request.path == '/request_leave' %}active{% endif %}" href="{{ url_for('request_leave') }}">Request Leave Form</a>
+            </li>
+        </ul>
+    </div>
+</nav>
+
+<h2>Pending Leave Requests</h2>
+<table class="table">
+    <thead>
+        <tr>
+            <th>Employee ID</th>
+            <th>Name</th>
+            <th>Leave Type</th>
+            <th>Start Date</th>
+            <th>End Date</th>
+            <th>Reason</th>
+            <th>Status</th>
+            <th>Submission Date</th>
+            <th>Days Requested</th>
+            <th>Action</th>
+        </tr>
+    </thead>
+    <tbody>
+        {% for request in leave_requests %}
+        <tr>
+            <td>{{ request['employee_id'] }}</td>
+            <td>{{ request['name'] }}</td>
+            <td>{{ request['leave_type'] }}</td>
+            <td>{{ request['start_date'] }}</td>
+            <td>{{ request['end_date'] }}</td>
+            <td>{{ request['reason'] }}</td>
+            <td>{{ request['status'] }}</td>
+            <td>{{ request['submission_date'] }}</td>
+            <td>{{ request['days_requested'] }}</td>
+            <td>
+                {% if request['status'] == 'Pending' %}
+                <a href="{{ url_for('approve_leave', request_id=request['request_id']) }}" class="btn btn-success">Approve</a>
+                <a href="{{ url_for('reject_leave', request_id=request['request_id']) }}" class="btn btn-danger">Reject</a>
+                {% endif %}
+            </td>
+        </tr>
+        {% endfor %}
+    </tbody>
+</table>
+
+{% endblock %}

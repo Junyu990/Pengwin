@@ -14,14 +14,18 @@
                 <a class="nav-link {% if request.path == '/leave/overview' %}active{% endif %}" href="{{ url_for('leave_overview') }}">Overview</a>
             </li>
             <li class="nav-item">
-                <a class="nav-link {% if request.path == '/leave' %}active{% endif %}" href="{{ url_for('view_all_leaves') }}">View Employee Leave Balance</a>
+                <a class="nav-link {% if request.path == '/leaves' %}active{% endif %}" href="{{ url_for('view_all_leaves') }}">View Employee Leave Balance</a>
             </li>
             <li class="nav-item">
-                <a class="nav-link {% if request.path == '/leave/pending' %}active{% endif %}" href="{{ url_for('pending_leave_request') }}">View Pending Leave</a>
+                <a class="nav-link {% if request.path == '/pending_leave_requests' %}active{% endif %}" href="{{ url_for('pending_leave_requests') }}">Pending Leave Requests</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {% if request.path == '/request_leave' %}active{% endif %}" href="{{ url_for('request_leave') }}">Request Leave Form</a>
             </li>
         </ul>
     </div>
 </nav>
+
 
 
 

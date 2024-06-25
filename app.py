@@ -23,48 +23,55 @@ def employee_list():
     employee_ref = db.collection("employees")
     docs = employee_ref.stream()
 
-    employees = [doc.to_dict() for doc in docs]
+    employees = []
+    for doc in docs:
+        employee_data = doc.to_dict()
+        employee_data['employee_id'] = doc.id  # Add the unique ID to the employee data
+        employees.append(employee_data)
+        
     return render_template('employee_list.html', employees=employees)
 
 @app.route('/employee/add', methods=['GET', 'POST'])
 def add_employee():
     if request.method == 'POST':
+        job_title = request.form['job_title']
+        prefix = ''.join([word[0].upper() for word in job_title.split()])  # Create prefix from job title
+        unique_id = generate_unique_id(prefix)
+        
+        name = request.form['name']
+        
+        date_of_birth = request.form['date_of_birth']
+        password = generate_password(name, date_of_birth)
+        
         employee_data = {
-            'password': request.form['password'],
-            'name': request.form['name'],
+            'password': password,
+            'name': name,
             'phone_number': request.form['phone_number'],
             'email': request.form['email'],
             'address': request.form['address'],
             'wallet_address': request.form['wallet_address'],
             'salary': float(request.form['salary']),
-            'date_of_birth': date.fromisoformat(request.form['date_of_birth']).isoformat(),
+            'date_of_birth': date.fromisoformat(date_of_birth).isoformat(),
             'citizenship': request.form['citizenship'],
             'employment_start_date': date.fromisoformat(request.form['employment_start_date']).isoformat(),
-            'job_title': request.form['job_title'],
-            'branch': request.form['branch'],
-            'annual_leave': request.form['annual_leave'],
-            'unpaid_leave': request.form['unpaid_leave'],
-            'medical_leave': request.form['medical_leave'],
-            'compassionate_leave': request.form['compassionate_leave']
-
+            'job_title': job_title,
+            'branch': request.form['branch']
         }
 
         print("Collected employee data:", json.dumps(employee_data, indent=2))  # Debug statement
         
-        
-        # Leave data initialization
+        # Collect leave data from form
         leave_data = {
-            'Annual Leave': {'allowed': 14, 'taken': 0},
-            'Unpaid Leave': {'allowed': 14, 'taken': 0},
-            'Compassionate Leave': {'allowed': 14, 'taken': 0},
-            'Medical Leave': {'allowed': 14, 'taken': 0}
+            'Annual Leave': {'allowed': int(request.form['annual_leave_allowed']), 'taken': 0},
+            'Unpaid Leave': {'allowed': int(request.form['unpaid_leave_allowed']), 'taken': 0},
+            'Compassionate Leave': {'allowed': int(request.form['compassionate_leave_allowed']), 'taken': 0},
+            'Medical Leave': {'allowed': int(request.form['medical_leave_allowed']), 'taken': 0}
         }
-        
 
         # Add employee data to Firestore
         try:
-            doc_ref = db.collection('employees').document(request.form['name']) # change to add username into document !!!!!!!!!!!
-            doc_ref.set(employee_data) # !!!!!!!!!!!!!!!
+            doc_ref = db.collection('employees').document(unique_id)  # Use the generated ID
+            doc_ref.set(employee_data)
             print("Employee added to Firestore successfully")  # Debug statement
             for leave_type, data in leave_data.items():
                 doc_ref.collection('leaves').document(leave_type).set(data)
@@ -75,21 +82,52 @@ def add_employee():
         return redirect(url_for('employee_list'))
     return render_template('add_employee.html')
 
+def generate_password(name, date_of_birth):
+    first_initial = name[0].upper()  # Take the first name and convert to lower case
+    birth_date_obj = datetime.strptime(date_of_birth, '%Y-%m-%d')
+    birth_date_formatted = birth_date_obj.strftime('%d%m%y')  # Format birthdate as ddmmyy
+    return f"{first_initial}{birth_date_formatted}"
+
+def generate_unique_id(prefix):
+    employees_ref = db.collection('employees')
+    existing_ids = [doc.id for doc in employees_ref.stream()]
+    
+    for num in range(1, 1000):
+        new_id = f"{prefix}{num:03d}"
+        if new_id not in existing_ids:
+            return new_id
+    raise ValueError("Unable to generate a unique ID")
+
+
 @app.route('/employee/delete/<string:employee_id>', methods=['POST'])
 def delete_employee(employee_id):
     employee_ref = db.collection('employees').document(employee_id)
+    
     try:
+        # Delete employee document
         employee_ref.delete()
         print(f"Employee with ID {employee_id} deleted successfully")  # Debug statement
+        
+        # Delete leave data associated with the employee
+        leave_ref = employee_ref.collection('leaves')
+        leave_docs = leave_ref.stream()
+        for doc in leave_docs:
+            doc.reference.delete()
+        
+        print(f"Leave data for employee with ID {employee_id} deleted successfully")  # Debug statement
+        
     except Exception as e:
-        print(f"Error deleting employee with ID {employee_id}:", e)  # Debug statement
+        print(f"Error deleting employee with ID {employee_id}: {e}")  # Debug statement
+    
     return redirect(url_for('employee_list'))
 
 @app.route('/overview')
 def overview():
     return render_template('overview.html')
 
-
+@app.route('/payroll-summary')
+def payroll_summary():
+    return render_template('payroll_summary.html')
 
 # Static data to simulate pending salaries
 pending_salaries_data = [
@@ -141,6 +179,14 @@ pending_salaries_data = [
         'status': 'Pending',
         'salary': 5500,
         'total_paid_this_year': 32000
+    },
+    {
+        'id': 7,
+        'name': 'Michael Johnson',
+        'location': 'Chicago',
+        'status': 'Pending',
+        'salary': 5500,
+        'total_paid_this_year': 32000
     }
 ]
 
@@ -161,6 +207,7 @@ def manage_pensions():
 @app.route('/leaves')
 
 
+@app.route('/leaves', methods=['GET'])
 def view_all_leaves():
     employees_ref = db.collection("employees")
     employees = employees_ref.stream()
@@ -172,9 +219,68 @@ def view_all_leaves():
         employee_id = employee.id
         leave_ref = employees_ref.document(employee_id).collection('leaves')
         leaves = {doc.id: doc.to_dict() for doc in leave_ref.stream()}
-        all_leaves.append({'name': employee_data['name'], 'leaves': leaves})
+        all_leaves.append({'id': employee_id, 'name': employee_data['name'], 'leaves': leaves})
     
     return render_template('view_all_leaves.html', all_leaves=all_leaves)
+
+@app.route('/pending_leave_requests')
+def pending_leave_requests():
+    leave_requests_ref = db.collection_group('leave_requests')
+    leave_requests = [doc.to_dict() for doc in leave_requests_ref.stream()]
+    
+    # Update each leave request with employee name and days requested
+    for request in leave_requests:
+        if 'employee_id' in request:
+            employee_ref = db.collection('employees').document(request['employee_id'])
+            employee_data = employee_ref.get().to_dict()
+            if employee_data is not None:
+                request['name'] = employee_data['name']
+                start_date = datetime.strptime(request['start_date'], '%Y-%m-%d')
+                end_date = datetime.strptime(request['end_date'], '%Y-%m-%d')
+                request['days_requested'] = (end_date - start_date).days + 1
+            else:
+                # Handle case where employee data is not found
+                request['name'] = 'Unknown'
+                request['days_requested'] = 'Unknown'
+        
+    return render_template('pending_leave_requests.html', leave_requests=leave_requests)
+
+
+def approve_leave_request(employee_id, request_id):
+    try:
+        # Get the employee document reference
+        employee_ref = db.collection('employees').document(employee_id)
+        employee_data = employee_ref.get().to_dict()
+
+        # Get the leave request document reference
+        leave_request_ref = employee_ref.collection('leave_requests').document(request_id)
+        leave_request_data = leave_request_ref.get().to_dict()
+
+        if employee_data and leave_request_data:
+            # Update leave status to 'Approved'
+            leave_request_ref.update({'status': 'Approved'})
+            return True
+        else:
+            print("Employee or leave request not found.")
+            return False
+    except Exception as e:
+        print(f"Error approving leave request: {e}")
+        return False
+
+# Usage example
+employee_id = 'your_employee_id'
+request_id = 'your_request_id'
+approve_leave_request(employee_id, request_id)
+
+@app.route('/reject_leave/<string:request_id>')
+def reject_leave(request_id):
+    try:
+        leave_request_ref = db.collection('employees').document(request_id.split('_')[0]).collection('leave_requests').document(request_id)
+        leave_request_ref.update({'status': 'Rejected'})
+        return redirect(url_for('pending_leave_requests'))
+    except Exception as e:
+        print(f"Error rejecting leave request: {e}")
+        return redirect(url_for('pending_leave_requests'))
 
 
 @app.route('/leave/overview')
@@ -182,90 +288,54 @@ def leave_overview():
     return render_template('leave_overview.html')
 
 
-@app.route('/leave/pending', methods=['GET', 'POST'])
-def pending_leave_request():
+@app.route('/request_leave', methods=['GET', 'POST'])
+def request_leave():
     if request.method == 'POST':
-        name = request.form['name']
+        employee_id = request.form['employee_id']
         leave_type = request.form['leave_type']
-        start_date = date.fromisoformat(request.form['start_date'])
-        end_date = date.fromisoformat(request.form['end_date'])
+        start_date = request.form['start_date']
+        end_date = request.form['end_date']
         reason = request.form['reason']
-        file = request.files['file']
-
-        days_requested = (end_date - start_date).days + 1
-
-        # Fetch employee leave data
-        employee_ref = db.collection('employees').document(name)
-        leave_ref = employee_ref.collection('leaves').document(leave_type)
-        leave_data = leave_ref.get().to_dict()
-
-        if leave_data['allowed'] < days_requested:
-            return "Leave request exceeds allowed leave days", 400
-
-        # Save leave request to Firestore
-        leave_request_data = {
-            'name': name,
+        
+        # Calculate number of days
+        start_date_obj = datetime.strptime(start_date, '%Y-%m-%d')
+        end_date_obj = datetime.strptime(end_date, '%Y-%m-%d')
+        num_days = (end_date_obj - start_date_obj).days + 1  # Add 1 to include the end date
+        
+        # Get employee name
+        employee_ref = db.collection('employees').document(employee_id)
+        employee_data = employee_ref.get().to_dict()
+        employee_name = employee_data['name']
+        
+        # Get current date and time as submission date
+        submission_date = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        
+        leave_data = {
+            'employee_id': employee_id,
+            'name': employee_name,
             'leave_type': leave_type,
-            'start_date': start_date.isoformat(),
-            'end_date': end_date.isoformat(),
+            'start_date': start_date,
+            'end_date': end_date,
             'reason': reason,
             'status': 'Pending',
-            'days_requested': days_requested
+            'num_days': num_days,
+            'submission_date': submission_date
         }
-        db.collection('leave_requests').add(leave_request_data)
+        
+        try:
+            db.collection('employees').document(employee_id).collection('leave_requests').add(leave_data)
+            return redirect(url_for('view_all_leaves'))
+        except Exception as e:
+            print(f"Error adding leave request: {e}")
+    
+    employees_ref = db.collection("employees")
+    employees = employees_ref.stream()
+    employee_data = [{'id': employee.id, 'name': employee.to_dict()['name']} for employee in employees]
+    
+    return render_template('request_leave.html', employees=employee_data)
 
-        return redirect(url_for('pending_leave_request'))
 
-    # Fetch pending leave requests
-    leave_requests_ref = db.collection('leave_requests').where('status', '==', 'Pending')
-    leave_requests = [{'id': doc.id, **doc.to_dict()} for doc in leave_requests_ref.stream()]
 
-    return render_template('pending_leave_request.html', pending_requests=leave_requests)
-
-from datetime import datetime
-
-@app.route('/submit_leave_request', methods=['POST'])
-def submit_leave_request():
-    name = request.form['name']
-    leave_type = request.form['leave_type']
-    start_date = request.form['start_date']
-    end_date = request.form['end_date']
-    reason = request.form['reason']
-    file = request.files['file'] if 'file' in request.files else None
-
-    # Calculate days_requested
-    start_date_obj = datetime.strptime(start_date, '%Y-%m-%d')
-    end_date_obj = datetime.strptime(end_date, '%Y-%m-%d')
-    days_requested = (end_date_obj - start_date_obj).days + 1  # Include end date
-
-    leave_data = {
-        'name': name,
-        'leave_type': leave_type,
-        'start_date': start_date,
-        'end_date': end_date,
-        'reason': reason,
-        'days_requested': days_requested,  # Add this line
-        'status': 'Pending'
-    }
-
-    if file:
-        # Optionally save the file to Firebase storage or a location
-        leave_data['file_name'] = file.filename
-
-    db.collection('leave_requests').add(leave_data)
-    return redirect(url_for('pending_leave_request'))
-
-@app.route('/approve_leave_request/<request_id>', methods=['POST'])
-def approve_leave_request(request_id):
-    leave_request_ref = db.collection('leave_requests').document(request_id)
-    leave_request_ref.update({'status': 'Approved'})
-    return redirect(url_for('pending_leave_request'))
-
-@app.route('/reject_leave_request/<request_id>', methods=['POST'])
-def reject_leave_request(request_id):
-    leave_request_ref = db.collection('leave_requests').document(request_id)
-    leave_request_ref.update({'status': 'Rejected'})
-    return redirect(url_for('pending_leave_request'))
 
 if __name__ == '__main__':
     app.run(debug=True)
