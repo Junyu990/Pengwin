@@ -1,4 +1,4 @@
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', async function() {
     const rightPanel = document.getElementById('rightPanel');
     const togglePanelBtn = document.getElementById('togglePanelBtn');
     const closePanelBtn = document.getElementById('closePanelBtn');
@@ -6,7 +6,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const selectedCount = document.getElementById('selectedCount');
     const totalPayment = document.getElementById('totalPayment');
     const checkboxes = document.querySelectorAll('input[name="employee_id"]');
-    let selectedEmployees = [];
+    let selectedEmployees = []; // Define selectedEmployees at a higher scope
 
     // Set payroll date to current date
     const payrollDate = document.getElementById('payrollDate');
@@ -29,8 +29,9 @@ document.addEventListener('DOMContentLoaded', function() {
             if (checkbox.checked) {
                 const row = checkbox.closest('tr');
                 const name = row.querySelector('td:nth-child(2)').textContent;
-                const salary = parseFloat(row.querySelector('td:nth-child(5)').textContent.replace('$', ''));
-                selectedEmployees.push({ name, salary });
+                const address = row.querySelector('td:nth-child(3)').textContent;
+                const salary = parseFloat(row.querySelector('td:nth-child(6)').textContent.replace('$', ''));
+                selectedEmployees.push({ name, address, salary });
                 totalPaymentAmount += salary;
             }
         });
@@ -103,13 +104,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (typeof window.ethereum !== 'undefined') {
             try {
                 // Initialize Web3
-                let web3;
-                if (typeof window.ethereum !== 'undefined') {
-                    web3 = new Web3(window.ethereum);
-                } else {
-                    console.error('MetaMask is not installed');
-                    return; // Exit early or handle the error
-                }
+                const web3 = new Web3(window.ethereum);
 
                 // Request account access if needed
                 const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
@@ -135,177 +130,144 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // Example: Interact with your smart contract (replace with actual ABI and contract address)
-    const contractAbi = [
-        [
-            {
-                "inputs": [],
-                "stateMutability": "nonpayable",
-                "type": "constructor"
-            },
-            {
-                "inputs": [
-                    {
-                        "internalType": "address payable",
-                        "name": "employee",
-                        "type": "address"
-                    }
-                ],
-                "name": "distributeSalary",
-                "outputs": [],
-                "stateMutability": "payable",
-                "type": "function"
-            },
-            {
-                "inputs": [],
-                "name": "klayUsdPrice",
-                "outputs": [
-                    {
-                        "internalType": "uint256",
-                        "name": "",
-                        "type": "uint256"
-                    }
-                ],
-                "stateMutability": "view",
-                "type": "function"
-            },
-            {
-                "inputs": [],
-                "name": "owner",
-                "outputs": [
-                    {
-                        "internalType": "address",
-                        "name": "",
-                        "type": "address"
-                    }
-                ],
-                "stateMutability": "view",
-                "type": "function"
-            },
-            {
-                "inputs": [
-                    {
-                        "internalType": "address",
-                        "name": "",
-                        "type": "address"
-                    }
-                ],
-                "name": "salaryByLocation",
-                "outputs": [
-                    {
-                        "internalType": "uint256",
-                        "name": "",
-                        "type": "uint256"
-                    }
-                ],
-                "stateMutability": "view",
-                "type": "function"
-            },
-            {
-                "inputs": [
-                    {
-                        "internalType": "address",
-                        "name": "employee",
-                        "type": "address"
-                    },
-                    {
-                        "internalType": "uint256",
-                        "name": "amount",
-                        "type": "uint256"
-                    }
-                ],
-                "name": "setSalary",
-                "outputs": [],
-                "stateMutability": "nonpayable",
-                "type": "function"
-            },
-            {
-                "inputs": [
-                    {
-                        "internalType": "uint256",
-                        "name": "newPrice",
-                        "type": "uint256"
-                    }
-                ],
-                "name": "updateKlayUsdPrice",
-                "outputs": [],
-                "stateMutability": "nonpayable",
-                "type": "function"
-            }
-        ]
+    // Contract ABI and address
+    const abi = [
+        {
+            "inputs": [
+                {
+                    "internalType": "address payable",
+                    "name": "_employeeAddress",
+                    "type": "address"
+                },
+                {
+                    "internalType": "uint256",
+                    "name": "_salaryAmount",
+                    "type": "uint256"
+                }
+            ],
+            "name": "transferSalary",
+            "outputs": [],
+            "stateMutability": "payable",
+            "type": "function"
+        },
+        {
+            "inputs": [],
+            "stateMutability": "nonpayable",
+            "type": "constructor"
+        },
+        {
+            "stateMutability": "payable",
+            "type": "receive"
+        },
+        {
+            "inputs": [],
+            "name": "owner",
+            "outputs": [
+                {
+                    "internalType": "address",
+                    "name": "",
+                    "type": "address"
+                }
+            ],
+            "stateMutability": "view",
+            "type": "function"
+        }
     ];
-    const contractAddress = '0xfd4b0f538cad6245db3abe7a897243e2b6c46d393c43c2a1c4bfd19ed39819f3'; // Replace with your contract address
+    const contractAddress = '0xf4bAC7F09Fa6F4eAd9E8f784355b5b159eDa146f'; // Replace with your contract address
 
-    // Example: Set salary function
-    document.getElementById('setSalaryBtn').addEventListener('click', async function() {
-        const employeeAddress = '0xEmployeeAddress'; // Replace with the employee's address
-        const salaryAmount = 100; // Example: Set salary amount (in Wei)
+    // Initialize contract
+    const web3 = new Web3(window.ethereum); // Initialize Web3
 
-        try {
-            if (typeof window.ethereum !== 'undefined') {
-                const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
-                const account = accounts[0];
-                const contract = new web3.eth.Contract(contractAbi, contractAddress);
+    try {
+        // Request account access if needed
+        const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+        const account = accounts[0];
+        console.log('Connected to MetaMask with account:', account);
 
-                // Example: Call setSalary function on your smart contract
-                await contract.methods.setSalary(employeeAddress, salaryAmount).send({ from: account });
+        // Update button text with the connected account address
+        connectMetaMaskBtn.textContent = `Connected: ${account.slice(0, 6)}...${account.slice(-4)}`;
+        connectMetaMaskBtn.classList.add('btn-success'); // Optionally change the button style
 
-                console.log('Salary set successfully!');
-                // Add UI update or success message here
-            } else {
-                console.error('MetaMask is not installed');
+        // Fetch KLAY balance using MetaMask provider and Web3
+        const balance = await web3.eth.getBalance(account);
+        const klayBalance = web3.utils.fromWei(balance, 'ether');
+
+        // Display balance below the button
+        walletInfoDiv.textContent = `Balance: ${klayBalance} KLAY`;
+        walletInfoDiv.classList.add('mt-2');
+
+        // Initialize contract instance
+        contract = new web3.eth.Contract(abi, contractAddress);
+
+        // Event listener for Distribute button (directly within DOMContentLoaded)
+        const distributeBtn = document.getElementById('distributeBtn');
+        if (distributeBtn) {
+            distributeBtn.addEventListener('click', async function() {
+                try {
+                    // Get selected employee addresses and salaries
+                    const employeeTransactions = [];
+                    selectedEmployees.forEach(({ address, salary }) => {
+                        const usdToWeiRate = 6.1118; // Exchange rate from USD to Wei
+                        const salaryWei = web3.utils.toWei((salary * usdToWeiRate).toString(), 'ether');
+
+                        // Prepare transaction parameters
+                        const transactionParameters = {
+                            to: contractAddress,
+                            from: account,
+                            data: contract.methods.transferSalary(address, salaryWei).encodeABI()
+                        };
+
+                        // Add transaction object to array
+                        employeeTransactions.push(transactionParameters);
+                    });
+
+                    // Sign and send each transaction
+                    const results = await Promise.all(employeeTransactions.map(params =>
+                        web3.eth.sendTransaction(params)
+                    ));
+
+                    console.log('Transactions sent:', results);
+                    alert('Salaries distributed successfully!');
+                } catch (error) {
+                    console.error('Error distributing salaries:', error);
+                    alert('Error distributing salaries. See console for details.');
+                }
+            });
+            // Event listener for Deposit button
+            const depositBtn = document.getElementById('depositBtn');
+            if (depositBtn) {
+                depositBtn.addEventListener('click', async function() {
+                    try {
+                        // Prompt user to enter deposit amount
+                        const depositAmount = prompt('Enter the amount of Ether to deposit:');
+
+                        if (!depositAmount || isNaN(depositAmount)) {
+                            throw new Error('Invalid amount');
+                        }
+
+                        // Convert Ether to Wei
+                        const amountWei = web3.utils.toWei(depositAmount.toString(), 'ether');
+
+                        // Send transaction to deposit Ether into the contract
+                        const transactionParameters = {
+                            to: contractAddress,
+                            from: account,
+                            value: amountWei
+                        };
+
+                        // Send transaction
+                        const result = await web3.eth.sendTransaction(transactionParameters);
+
+                        console.log('Deposit transaction result:', result);
+                        alert(`Successfully deposited ${depositAmount} Ether into the contract!`);
+                    } catch (error) {
+                        console.error('Error depositing Ether:', error);
+                        alert('Error depositing Ether. See console for details.');
+                    }
+                });
             }
-        } catch (error) {
-            console.error('Error setting salary:', error);
-            // Handle error and display user-friendly message
         }
-    });
-
-    // Example: Distribute salary function
-    document.getElementById('distributeSalaryBtn').addEventListener('click', async function() {
-        const employeeAddress = '0xEmployeeAddress'; // Replace with the employee's address
-
-        try {
-            if (typeof window.ethereum !== 'undefined') {
-                const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
-                const account = accounts[0];
-                const contract = new web3.eth.Contract(contractAbi, contractAddress);
-
-                // Example: Call distributeSalary function on your smart contract
-                await contract.methods.distributeSalary(employeeAddress).send({ from: account, value: web3.utils.toWei('1', 'ether') });
-
-                console.log('Salary distributed successfully!');
-                // Add UI update or success message here
-            } else {
-                console.error('MetaMask is not installed');
-            }
-        } catch (error) {
-            console.error('Error distributing salary:', error);
-            // Handle error and display user-friendly message
-        }
-    });
-
-    // Example: Update KLAY/USD price function
-    document.getElementById('updatePriceBtn').addEventListener('click', async function() {
-        const newPrice = 210000000000000000; // Example: New price in Wei (replace with your actual logic)
-        
-        try {
-            if (typeof window.ethereum !== 'undefined') {
-                const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
-                const account = accounts[0];
-                const contract = new web3.eth.Contract(contractAbi, contractAddress);
-
-                // Example: Call updateKlayUsdPrice function on your smart contract
-                await contract.methods.updateKlayUsdPrice(newPrice).send({ from: account });
-
-                console.log('Klay/USD price updated successfully!');
-                // Add UI update or success message here
-            } else {
-                console.error('MetaMask is not installed');
-            }
-        } catch (error) {
-            console.error('Error updating Klay/USD price:', error);
-            // Handle error and display user-friendly message
-        }
-    });
+    } catch (error) {
+        console.error('User rejected the request or an error occurred', error);
+    }
 });

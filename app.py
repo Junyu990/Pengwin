@@ -129,72 +129,19 @@ def overview():
 def payroll_summary():
     return render_template('payroll_summary.html')
 
-# Static data to simulate pending salaries
-pending_salaries_data = [
-    {
-        'id': 1,
-        'name': 'John Doe',
-        'request_date': '2024-06-01',
-        'location': 'New York',
-        'status': 'Pending',
-        'salary': 5000,
-        'total_paid_this_year': 30000
-    },
-    {
-        'id': 2,
-        'name': 'Jane Smith',
-        'location': 'Los Angeles',
-        'status': 'Pending',
-        'salary': 6000,
-        'total_paid_this_year': 35000
-    },
-    {
-        'id': 3,
-        'name': 'Michael Johnson',
-        'location': 'Chicago',
-        'status': 'Pending',
-        'salary': 5500,
-        'total_paid_this_year': 32000
-    },
-    {
-        'id': 4,
-        'name': 'Michael Johnson',
-        'location': 'Chicago',
-        'status': 'Pending',
-        'salary': 5500,
-        'total_paid_this_year': 32000
-    },
-    {
-        'id': 5,
-        'name': 'Michael Johnson',
-        'location': 'Chicago',
-        'status': 'Pending',
-        'salary': 5500,
-        'total_paid_this_year': 32000
-    },
-    {
-        'id': 6,
-        'name': 'Michael Johnson',
-        'location': 'Chicago',
-        'status': 'Pending',
-        'salary': 5500,
-        'total_paid_this_year': 32000
-    },
-    {
-        'id': 7,
-        'name': 'Michael Johnson',
-        'location': 'Chicago',
-        'status': 'Pending',
-        'salary': 5500,
-        'total_paid_this_year': 32000
-    }
-]
 
 @app.route('/pending-salaries')
 def pending_salaries():
-    return render_template('pending_salaries.html', pending_salaries=pending_salaries_data)
+    pending_salaries_ref = db.collection('employees')
+    docs = pending_salaries_ref.stream()
 
-
+    pending_salaries = []
+    for doc in docs:
+        salary_data = doc.to_dict()
+        salary_data['id'] = doc.id
+        pending_salaries.append(salary_data)
+    
+    return render_template('pending_salaries.html', pending_salaries=pending_salaries)
 
 @app.route('/tax-authorisation')
 def tax_authorisation():
