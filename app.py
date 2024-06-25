@@ -41,7 +41,12 @@ def add_employee():
             'citizenship': request.form['citizenship'],
             'employment_start_date': date.fromisoformat(request.form['employment_start_date']).isoformat(),
             'job_title': request.form['job_title'],
-            'branch': request.form['branch']
+            'branch': request.form['branch'],
+            'annual_leave': request.form['annual_leave'],
+            'unpaid_leave': request.form['unpaid_leave'],
+            'medical_leave': request.form['medical_leave'],
+            'compassionate_leave': request.form['compassionate_leave']
+
         }
 
         print("Collected employee data:", json.dumps(employee_data, indent=2))  # Debug statement

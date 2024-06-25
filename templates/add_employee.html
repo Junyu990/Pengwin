@@ -1,7 +1,27 @@
 {% extends "base.html" %}
 
 {% block content %}
-<h1>Add Employee</h1>
+<h1>Account Creation</h1>
+
+<hr>
+<!-- Horizontal Navbar -->
+<nav class="navbar navbar-expand-lg navbar-light bg-light">
+    <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarNav" aria-controls="navbarNav" aria-expanded="false" aria-label="Toggle navigation">
+        <span class="navbar-toggler-icon"></span>
+    </button>
+    <div class="collapse navbar-collapse" id="navbarNav">
+        <ul class="navbar-nav">
+            <li class="nav-item">
+                <a class="nav-link {% if request.path == '/employee-list' %}active{% endif %}" href="{{ url_for('employee_list') }}">Employee Details</a>
+            </li>
+            <li class="nav-item">
+                <a class="nav-link {% if request.path == '/add_employee' %}active{% endif %}" href="{{ url_for('add_employee') }}">Create Account</a>
+            </li>
+        </ul>
+    </div>
+</nav>
+
+<br>
 <form method="POST">
     <label for="password">Password:</label>
     <input type="password" id="password" name="password" required><br>
@@ -38,6 +58,18 @@
 
     <label for="branch">Branch:</label>
     <input type="text" id="branch" name="branch" required><br>
+
+    <label for="annual_leave">Annual Leave:</label>
+    <input type="text" id="annual_leave" name="annual_leave" required><br>
+
+    <label for="unpaid_leave">Unpaid Leave:</label>
+    <input type="text" id="unpaid_leave" name="unpaid_leave" required><br>
+
+    <label for="medical_leave">Medical Leave:</label>
+    <input type="text" id="medical_leave" name="medical_leave" required><br>
+
+    <label for="compassionate_leave">Compassionate Leave:</label>
+    <input type="text" id="compassionate_leave" name="compassionate_leave" required><br>
 
     <button type="submit">Add Employee</button>
 </form>
