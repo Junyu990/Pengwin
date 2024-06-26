@@ -1,11 +1,14 @@
-from flask import Flask, render_template, request, redirect, url_for
+from flask import Flask, render_template, request, redirect, url_for, flash
 import firebase_admin
 from firebase_admin import credentials, firestore
 from datetime import date
 from datetime import datetime
 import json
+import re
+
 
 app = Flask(__name__)
+app.secret_key = 'your_secret_key'
 app.static_folder = 'static'
 
 # Firebase initialization
@@ -17,6 +20,7 @@ db = firestore.client()
 @app.route('/')
 def index():
     return render_template('index.html')
+
 
 @app.route('/employees')
 def employee_list():
@@ -33,24 +37,45 @@ def employee_list():
 
 @app.route('/employee/add', methods=['GET', 'POST'])
 def add_employee():
+
+
     if request.method == 'POST':
         job_title = request.form['job_title']
         prefix = ''.join([word[0].upper() for word in job_title.split()])  # Create prefix from job title
         unique_id = generate_unique_id(prefix)
         
         name = request.form['name']
+        if not name.isalpha():
+            flash("Name must only contain alphabetic characters.", "danger")
+            return redirect(url_for('add_employee'))
+        
+        phone_number = request.form['phone_number']
+        if not phone_number.isdigit() or len(phone_number) > 18:
+            flash("Phone number must only contain up to 18 digits.", "danger")
+            return redirect(url_for('add_employee'))
+        
+        email = request.form['email']
+        if not re.match(r'^[^\s@]+@[^\s@]+\.[^\s@]+$', email):
+            flash("Please enter a valid email address.", "danger")
+            return redirect(url_for('add_employee'))
+        
+        salary = request.form['salary']
+        if not re.match(r'^\d+(\.\d{1,2})?$', salary):
+            flash("Salary must be a valid number (up to 2 decimal places).", "danger")
+            return redirect(url_for('add_employee'))
         
         date_of_birth = request.form['date_of_birth']
         password = generate_password(name, date_of_birth)
         
+        
         employee_data = {
             'password': password,
             'name': name,
-            'phone_number': request.form['phone_number'],
-            'email': request.form['email'],
+            'phone_number': phone_number,
+            'email': email,
             'address': request.form['address'],
             'wallet_address': request.form['wallet_address'],
-            'salary': float(request.form['salary']),
+            'salary': salary,
             'date_of_birth': date.fromisoformat(date_of_birth).isoformat(),
             'citizenship': request.form['citizenship'],
             'employment_start_date': date.fromisoformat(request.form['employment_start_date']).isoformat(),
@@ -79,8 +104,11 @@ def add_employee():
         except Exception as e:
             print("Error adding employee to Firestore:", e)  # Debug statement
 
+        
         return redirect(url_for('employee_list'))
+
     return render_template('add_employee.html')
+
 
 def generate_password(name, date_of_birth):
     first_initial = name[0].upper()  # Take the first name and convert to lower case
