@@ -1,0 +1,14 @@
+#rightPanel {
+    position: fixed;
+    top: 0;
+    right: 0;
+    width: 600px; /* Adjust width as needed */
+    height: 100%; /* Adjust height as needed */
+    background-color: #f8f9fa; /* Example background color */
+    z-index: 1000; /* Ensure it overlays other content */
+    transition: right 0.3s ease; /* Smooth sliding effect */
+}
+
+#togglePanelBtn {
+    display: none; /* Hide the toggle button */
+}

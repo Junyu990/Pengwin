@@ -65,10 +65,10 @@
         </div>
 
         <!-- Right Container (Sliding Panel) -->
-        <div id="rightPanel" class="col-lg-3 bg-light" style="position: fixed; right: -600px; top: 0; bottom: 0; z-index: 1050; transition: right 0.3s ease-out;">
+        <div id="rightPanel" class="col-lg-3 bg-light" style="position: fixed; right: 0; top: 0; bottom: 0; z-index: 1050; transition: right 0.3s ease-out;">
             <div class="d-flex justify-content-between align-items-center p-3 border-bottom">
                 <h5 class="my-0">Execute Payroll</h5>
-                <button id="closePanelBtn" class="btn btn-link p-0 m-0">&times;</button>
+                <!-- <button id="closePanelBtn" class="btn btn-link p-0 m-0">&times;</button> -->
             </div>
             <div id="payrollDetails" class="p-3">
                 <!-- Information Box -->
@@ -93,7 +93,7 @@
 
                 <!-- Total Payment Amount -->
                 <div class="alert alert-secondary" role="alert">
-                    <strong>Total Payment Amount:</strong> <span id="totalPayment">0.00</span> 
+                    <strong>Total Payment Amount:</strong> <span id="totalPayment">$0.00</span> 
                     <br> (<span id="totalinKlay">0</span> KLAY)
                 </div>
 
@@ -112,7 +112,7 @@
                 <button id="depositBtn" class="btn btn-primary mt-3">Deposit Ether</button>
                 <!-- Contract Balance -->
                 <div class="alert alert-secondary mt-3" role="alert">
-                    <strong>Contract Balance:</strong> <span id="contractBalance">0</span> KLAY
+                    <strong>Contract Balance:</strong> $<span id="contractBalanceUSD">0.00</span> <br> (<span id="contractBalance">0</span> KLAY)
                 </div>
 
                 <!-- Submission Note -->
@@ -133,7 +133,7 @@
 </div>
 
 <!-- Toggle Panel Button -->
-<button id="togglePanelBtn" class="btn btn-primary mt-3">Execute Payroll</button>
+<!-- <button id="togglePanelBtn" class="btn btn-primary mt-3">Execute Payroll</button> -->
 
 <!-- Include Web3.js library (example using CDN) -->
 <script src="https://cdn.jsdelivr.net/npm/web3@1.6.0/dist/web3.min.js"></script>

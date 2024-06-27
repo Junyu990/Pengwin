@@ -8,6 +8,7 @@ document.addEventListener('DOMContentLoaded', async function() {
     const totalinKlay = document.getElementById('totalinKlay');
     const checkboxes = document.querySelectorAll('input[name="employee_id"]');
     const contractBalanceElement = document.getElementById('contractBalance'); // Element to display contract balance
+    const contractBalanceUSDElement = document.getElementById('contractBalanceUSD'); // Element to display contract balance
     let selectedEmployees = []; // Define selectedEmployees at a higher scope
     let account;
     let contract;
@@ -83,8 +84,8 @@ document.addEventListener('DOMContentLoaded', async function() {
         }
     }
 
-    togglePanelBtn.addEventListener('click', showPanel);
-    closePanelBtn.addEventListener('click', hidePanel);
+    // togglePanelBtn.addEventListener('click', showPanel);
+    // closePanelBtn.addEventListener('click', hidePanel);
 
     // Handle row click to toggle checkbox
     document.querySelectorAll('.table-responsive tr').forEach(row => {
@@ -183,7 +184,7 @@ document.addEventListener('DOMContentLoaded', async function() {
             "type": "function"
         }
     ];
-    const contractAddress = '0x7Ce49F0520F521a39E77E40d2Bf0D1b6D1c94646'; // Replace with your contract address
+    const contractAddress = '0xC349a485c7a138D0647194b55378D9F4939dea8f'; // Replace with your contract address
 
     // Initialize contract
     const web3 = new Web3(window.ethereum); // Initialize Web3
@@ -213,6 +214,7 @@ document.addEventListener('DOMContentLoaded', async function() {
         const contractBalance = await web3.eth.getBalance(contractAddress);
         const contractKlayBalance = web3.utils.fromWei(contractBalance, 'ether');
         contractBalanceElement.textContent = contractKlayBalance;
+        contractBalanceUSDElement.textContent = contractKlayBalance / 6.1118;
 
         const distributeBtn = document.getElementById('distributeBtn');
     const authKeyWarning = document.getElementById('authKeyWarning');
@@ -266,6 +268,7 @@ document.addEventListener('DOMContentLoaded', async function() {
                 ));
 
                 console.log('Transactions sent:', results);
+                location.reload();
                 alert('Salaries distributed successfully!');
             } catch (error) {
                 console.error('Error distributing salaries:', error);
@@ -281,13 +284,14 @@ document.addEventListener('DOMContentLoaded', async function() {
                 try {
                     // Prompt user to enter deposit amount
                     const depositAmount = prompt('Enter the amount of Ether to deposit:');
+                    const depositAmountinKlay = depositAmount * 6.1118
 
                     if (!depositAmount || isNaN(depositAmount)) {
                         throw new Error('Invalid amount');
                     }
 
                     // Convert Ether to Wei
-                    const amountWei = web3.utils.toWei(depositAmount.toString(), 'ether');
+                    const amountWei = web3.utils.toWei(depositAmountinKlay.toString(), 'ether');
 
                     // Send transaction to deposit Ether into the contract
                     const transactionParameters = {
@@ -300,6 +304,7 @@ document.addEventListener('DOMContentLoaded', async function() {
                     const result = await web3.eth.sendTransaction(transactionParameters);
 
                     console.log('Deposit transaction result:', result);
+                    location.reload();
                     alert(`Successfully deposited ${depositAmount} Ether into the contract!`);
                 } catch (error) {
                     console.error('Error depositing Ether:', error);
