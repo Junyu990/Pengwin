@@ -5,8 +5,12 @@ document.addEventListener('DOMContentLoaded', async function() {
     const employeeList = document.getElementById('employeeList');
     const selectedCount = document.getElementById('selectedCount');
     const totalPayment = document.getElementById('totalPayment');
+    const totalinKlay = document.getElementById('totalinKlay');
     const checkboxes = document.querySelectorAll('input[name="employee_id"]');
+    const contractBalanceElement = document.getElementById('contractBalance'); // Element to display contract balance
     let selectedEmployees = []; // Define selectedEmployees at a higher scope
+    let account;
+    let contract;
 
     // Set payroll date to current date
     const payrollDate = document.getElementById('payrollDate');
@@ -25,6 +29,7 @@ document.addEventListener('DOMContentLoaded', async function() {
     function updateSelectedEmployees() {
         selectedEmployees = [];
         let totalPaymentAmount = 0;
+        let totalinKlayamount = 0
         checkboxes.forEach(checkbox => {
             if (checkbox.checked) {
                 const row = checkbox.closest('tr');
@@ -33,11 +38,13 @@ document.addEventListener('DOMContentLoaded', async function() {
                 const salary = parseFloat(row.querySelector('td:nth-child(6)').textContent.replace('$', ''));
                 selectedEmployees.push({ name, address, salary });
                 totalPaymentAmount += salary;
+                totalinKlayamount += salary * 6.118;
             }
         });
 
         selectedCount.textContent = selectedEmployees.length;
         totalPayment.textContent = `$${totalPaymentAmount.toFixed(2)}`;
+        totalinKlay.textContent = `${totalinKlayamount.toFixed(2)}`;
 
         // Update employee list in the panel
         employeeList.innerHTML = '';
@@ -108,7 +115,7 @@ document.addEventListener('DOMContentLoaded', async function() {
 
                 // Request account access if needed
                 const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
-                const account = accounts[0];
+                account = accounts[0];
                 console.log('Connected to MetaMask with account:', account);
 
                 // Update button text with the connected account address
@@ -122,6 +129,9 @@ document.addEventListener('DOMContentLoaded', async function() {
                 // Display balance below the button
                 walletInfoDiv.textContent = `Balance: ${klayBalance} KLAY`;
                 walletInfoDiv.classList.add('mt-2');
+
+                // Initialize contract
+                contract = new web3.eth.Contract(abi, contractAddress);
             } catch (error) {
                 console.error('User rejected the request or an error occurred', error);
             }
@@ -173,7 +183,7 @@ document.addEventListener('DOMContentLoaded', async function() {
             "type": "function"
         }
     ];
-    const contractAddress = '0xf4bAC7F09Fa6F4eAd9E8f784355b5b159eDa146f'; // Replace with your contract address
+    const contractAddress = '0x7Ce49F0520F521a39E77E40d2Bf0D1b6D1c94646'; // Replace with your contract address
 
     // Initialize contract
     const web3 = new Web3(window.ethereum); // Initialize Web3
@@ -181,7 +191,7 @@ document.addEventListener('DOMContentLoaded', async function() {
     try {
         // Request account access if needed
         const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
-        const account = accounts[0];
+        account = accounts[0];
         console.log('Connected to MetaMask with account:', account);
 
         // Update button text with the connected account address
@@ -199,73 +209,103 @@ document.addEventListener('DOMContentLoaded', async function() {
         // Initialize contract instance
         contract = new web3.eth.Contract(abi, contractAddress);
 
-        // Event listener for Distribute button (directly within DOMContentLoaded)
+        // Fetch and display contract balance
+        const contractBalance = await web3.eth.getBalance(contractAddress);
+        const contractKlayBalance = web3.utils.fromWei(contractBalance, 'ether');
+        contractBalanceElement.textContent = contractKlayBalance;
+
         const distributeBtn = document.getElementById('distributeBtn');
-        if (distributeBtn) {
-            distributeBtn.addEventListener('click', async function() {
+    const authKeyWarning = document.getElementById('authKeyWarning');
+
+    if (distributeBtn) {
+        distributeBtn.addEventListener('click', async function () {
+            try {
+                if (!contract || !account) {
+                    throw new Error('Contract not initialized or account not connected');
+                }
+
+                const authKey = document.getElementById('authKey').value;
+                if (!authKey) {
+                    authKeyWarning.textContent = 'Please enter the authorization key.';
+                    authKeyWarning.style.display = 'block';
+                    return;
+                }
+
+                const response = await fetch('/validate-auth-key', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ authKey })
+                });
+
+                const result = await response.json();
+                if (!result.success) {
+                    authKeyWarning.textContent = 'Invalid authorization key. Please try again.';
+                    authKeyWarning.style.display = 'block';
+                    return;
+                }
+
+                authKeyWarning.style.display = 'none'; // Hide the warning if the key is valid
+
+                const employeeTransactions = [];
+                selectedEmployees.forEach(({ address, salary }) => {
+                    const usdToWeiRate = salary * 6.1118; // Exchange rate from USD to Wei
+                    const salaryWei = web3.utils.toWei(usdToWeiRate.toString(), 'ether'); // Convert salary to Wei
+                    console.log(salaryWei);
+                    const transactionParameters = {
+                        to: contractAddress,
+                        from: account,
+                        data: contract.methods.transferSalary(address, salaryWei).encodeABI()
+                    };
+                    employeeTransactions.push(transactionParameters);
+                });
+
+                const results = await Promise.all(employeeTransactions.map(params =>
+                    web3.eth.sendTransaction(params)
+                ));
+
+                console.log('Transactions sent:', results);
+                alert('Salaries distributed successfully!');
+            } catch (error) {
+                console.error('Error distributing salaries:', error);
+                alert('Error distributing salaries. See console for details.');
+            }
+        });
+        }
+
+        // Event listener for Deposit button
+        const depositBtn = document.getElementById('depositBtn');
+        if (depositBtn) {
+            depositBtn.addEventListener('click', async function() {
                 try {
-                    // Get selected employee addresses and salaries
-                    const employeeTransactions = [];
-                    selectedEmployees.forEach(({ address, salary }) => {
-                        const usdToWeiRate = 6.1118; // Exchange rate from USD to Wei
-                        const salaryWei = web3.utils.toWei((salary * usdToWeiRate).toString(), 'ether');
+                    // Prompt user to enter deposit amount
+                    const depositAmount = prompt('Enter the amount of Ether to deposit:');
 
-                        // Prepare transaction parameters
-                        const transactionParameters = {
-                            to: contractAddress,
-                            from: account,
-                            data: contract.methods.transferSalary(address, salaryWei).encodeABI()
-                        };
+                    if (!depositAmount || isNaN(depositAmount)) {
+                        throw new Error('Invalid amount');
+                    }
 
-                        // Add transaction object to array
-                        employeeTransactions.push(transactionParameters);
-                    });
+                    // Convert Ether to Wei
+                    const amountWei = web3.utils.toWei(depositAmount.toString(), 'ether');
 
-                    // Sign and send each transaction
-                    const results = await Promise.all(employeeTransactions.map(params =>
-                        web3.eth.sendTransaction(params)
-                    ));
+                    // Send transaction to deposit Ether into the contract
+                    const transactionParameters = {
+                        to: contractAddress,
+                        from: account,
+                        value: amountWei
+                    };
 
-                    console.log('Transactions sent:', results);
-                    alert('Salaries distributed successfully!');
+                    // Send transaction
+                    const result = await web3.eth.sendTransaction(transactionParameters);
+
+                    console.log('Deposit transaction result:', result);
+                    alert(`Successfully deposited ${depositAmount} Ether into the contract!`);
                 } catch (error) {
-                    console.error('Error distributing salaries:', error);
-                    alert('Error distributing salaries. See console for details.');
+                    console.error('Error depositing Ether:', error);
+                    alert('Error depositing Ether. See console for details.');
                 }
             });
-            // Event listener for Deposit button
-            const depositBtn = document.getElementById('depositBtn');
-            if (depositBtn) {
-                depositBtn.addEventListener('click', async function() {
-                    try {
-                        // Prompt user to enter deposit amount
-                        const depositAmount = prompt('Enter the amount of Ether to deposit:');
-
-                        if (!depositAmount || isNaN(depositAmount)) {
-                            throw new Error('Invalid amount');
-                        }
-
-                        // Convert Ether to Wei
-                        const amountWei = web3.utils.toWei(depositAmount.toString(), 'ether');
-
-                        // Send transaction to deposit Ether into the contract
-                        const transactionParameters = {
-                            to: contractAddress,
-                            from: account,
-                            value: amountWei
-                        };
-
-                        // Send transaction
-                        const result = await web3.eth.sendTransaction(transactionParameters);
-
-                        console.log('Deposit transaction result:', result);
-                        alert(`Successfully deposited ${depositAmount} Ether into the contract!`);
-                    } catch (error) {
-                        console.error('Error depositing Ether:', error);
-                        alert('Error depositing Ether. See console for details.');
-                    }
-                });
-            }
         }
     } catch (error) {
         console.error('User rejected the request or an error occurred', error);

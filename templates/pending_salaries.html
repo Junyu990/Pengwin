@@ -50,7 +50,7 @@
                     <tbody>
                         {% for salary in pending_salaries %}
                         <tr>
-                            <td><input type="checkbox" name="employee_id" value="{{ salary.id }}"></td>
+                            <td><input type="checkbox" name="employee_id" value="{{ salary.id }}" data-address="{{ salary.wallet_address }}" data-salary="{{ salary.salary }}"></td>
                             <td>{{ salary.name }}</td>
                             <td>{{ salary.wallet_address}}</td>
                             <td>{{ salary.branch }}</td>
@@ -93,13 +93,27 @@
 
                 <!-- Total Payment Amount -->
                 <div class="alert alert-secondary" role="alert">
-                    <strong>Total Payment Amount:</strong> <span id="totalPayment">0.00</span>
+                    <strong>Total Payment Amount:</strong> <span id="totalPayment">0.00</span> 
+                    <br> (<span id="totalinKlay">0</span> KLAY)
+                </div>
+
+                <!-- Inside the right panel in the existing form -->
+                <div class="form-group">
+                    <label for="authKey">Authorization Key</label>
+                    <input type="password" class="form-control" id="authKey" placeholder="Enter authorization key">
+                    <div id="authKeyWarning" class="alert alert-danger mt-2" role="alert" style="display: none;">
+                        Invalid authorization key. Please try again.
+                    </div>
                 </div>
 
                 <!-- Connect to MetaMask Button -->
                 <button id="connectMetaMaskBtn" class="btn btn-primary mt-3">Connect to MetaMask Wallet</button>
                 
-                <button id="depositBtn" class="btn btn-primary">Deposit Ether</button>
+                <button id="depositBtn" class="btn btn-primary mt-3">Deposit Ether</button>
+                <!-- Contract Balance -->
+                <div class="alert alert-secondary mt-3" role="alert">
+                    <strong>Contract Balance:</strong> <span id="contractBalance">0</span> KLAY
+                </div>
 
                 <!-- Submission Note -->
                 <div class="alert alert-warning d-flex align-items-center mt-3" role="alert">

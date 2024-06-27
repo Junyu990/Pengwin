@@ -1,4 +1,4 @@
-from flask import Flask, render_template, request, redirect, url_for, flash
+from flask import Flask, jsonify, render_template, request, redirect, url_for, flash
 import firebase_admin
 from firebase_admin import credentials, firestore
 from datetime import date
@@ -170,6 +170,17 @@ def pending_salaries():
         pending_salaries.append(salary_data)
     
     return render_template('pending_salaries.html', pending_salaries=pending_salaries)
+
+@app.route('/validate-auth-key', methods=['POST'])
+def validate_auth_key():
+    data = request.get_json()
+    auth_key = data.get('authKey')
+    
+    # Replace 'your_actual_auth_key' with the actual authorization key
+    if auth_key == '123456':
+        return jsonify({'success': True})
+    else:
+        return jsonify({'success': False})
 
 @app.route('/tax-authorisation')
 def tax_authorisation():
