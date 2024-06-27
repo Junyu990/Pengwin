@@ -22,17 +22,19 @@
 </nav>
 
 <br>
-<form method="POST" action="{{ url_for('add_employee') }}" class="container" onsubmit="return validateForm()">
+<form method="POST" action="{{ url_for('add_employee') }}" class="container" oninput="validateForm()">
     <div class="row">
         <div class="col-md-6 mb-3">
             <label for="name">Name:</label>
             <input type="text" id="name" name="name" class="form-control" required>
             <div id="nameError" class="text-danger" style="display: none;">Name must only contain alphabetic characters.</div>
+            <div id="nameRequiredError" class="text-danger" style="display: none;">This field is required.</div>
         </div>
         <div class="col-md-6 mb-3">
             <label for="phone_number">Phone Number:</label>
             <input type="text" id="phone_number" name="phone_number" class="form-control" required>
             <div id="phoneError" class="text-danger" style="display: none;">Phone number must only contain up to 18 digits.</div>
+            <div id="phoneRequiredError" class="text-danger" style="display: none;">This field is required.</div>
         </div>
     </div>
     <div class="row">
@@ -40,16 +42,19 @@
             <label for="email">Email:</label>
             <input type="email" id="email" name="email" class="form-control" required>
             <div id="emailError" class="text-danger" style="display: none;">Please enter a valid email address.</div>
+            <div id="emailRequiredError" class="text-danger" style="display: none;">This field is required.</div>
         </div>
         <div class="col-md-6 mb-3">
             <label for="address">Address:</label>
             <input type="text" id="address" name="address" class="form-control" required>
+            <div id="addressRequiredError" class="text-danger" style="display: none;">This field is required.</div>
         </div>
     </div>
     <div class="row">
         <div class="col-md-6 mb-3">
             <label for="wallet_address">Wallet Address:</label>
             <input type="text" id="wallet_address" name="wallet_address" class="form-control" required>
+            <div id="walletAddressRequiredError" class="text-danger" style="display: none;">This field is required.</div>
         </div>
         <div class="col-md-6 mb-3">
             <label for="salary">Salary:</label>
@@ -59,36 +64,44 @@
                 </div>
                 <input type="text" id="salary" name="salary" class="form-control" pattern="[0-9]+([\.,][0-9]+)?" step="0.01" required>
             </div>
+            <div id="salaryError" class="text-danger" style="display: none;">Salary must be a valid number (up to 2 decimal places).</div>
+            <div id="salaryRequiredError" class="text-danger" style="display: none;">This field is required.</div>
         </div>
     </div>
     <div class="row">
         <div class="col-md-6 mb-3">
             <label for="date_of_birth">Date of Birth:</label>
             <input type="date" id="date_of_birth" name="date_of_birth" class="form-control" required>
+            <div id="dateOfBirthRequiredError" class="text-danger" style="display: none;">This field is required.</div>
         </div>
         <div class="col-md-6 mb-3">
             <label for="citizenship">Citizenship:</label>
             <input type="text" id="citizenship" name="citizenship" class="form-control" required>
+            <div id="citizenshipRequiredError" class="text-danger" style="display: none;">This field is required.</div>
         </div>
     </div>
     <div class="row">
         <div class="col-md-6 mb-3">
             <label for="employment_start_date">Employment Start Date:</label>
             <input type="date" id="employment_start_date" name="employment_start_date" class="form-control" required>
+            <div id="employmentStartDateRequiredError" class="text-danger" style="display: none;">This field is required.</div>
         </div>
         <div class="col-md-6 mb-3">
             <label for="job_title">Job Title:</label>
             <input type="text" id="job_title" name="job_title" class="form-control" required>
+            <div id="jobTitleRequiredError" class="text-danger" style="display: none;">This field is required.</div>
         </div>
     </div>
     <div class="row">
         <div class="col-md-6 mb-3">
             <label for="branch">Branch:</label>
             <input type="text" id="branch" name="branch" class="form-control" required>
+            <div id="branchRequiredError" class="text-danger" style="display: none;">This field is required.</div>
         </div>
         <div class="col-md-6 mb-3">
             <label for="claim">Total Claim Eligible:</label>
             <input type="number" id="claim" name="claim" class="form-control" required>
+            <div id="claimRequiredError" class="text-danger" style="display: none;">This field is required.</div>
         </div>
     </div>
 
@@ -96,20 +109,24 @@
         <div class="col-md-6 mb-3">
             <label for="annual_leave">Annual Leave Allowed:</label>
             <input type="number" id="annual_leave" name="annual_leave_allowed" class="form-control" required>
+            <div id="annualLeaveRequiredError" class="text-danger" style="display: none;">This field is required.</div>
         </div>
         <div class="col-md-6 mb-3">
             <label for="unpaid_leave">Unpaid Leave Allowed:</label>
             <input type="number" id="unpaid_leave" name="unpaid_leave_allowed" class="form-control" required>
+            <div id="unpaidLeaveRequiredError" class="text-danger" style="display: none;">This field is required.</div>
         </div>
     </div>
     <div class="row">
         <div class="col-md-6 mb-3">
             <label for="medical_leave">Medical Leave Allowed:</label>
             <input type="number" id="medical_leave" name="medical_leave_allowed" class="form-control" required>
+            <div id="medicalLeaveRequiredError" class="text-danger" style="display: none;">This field is required.</div>
         </div>
         <div class="col-md-6 mb-3">
             <label for="compassionate_leave">Compassionate Leave Allowed:</label>
             <input type="number" id="compassionate_leave" name="compassionate_leave_allowed" class="form-control" required>
+            <div id="compassionateLeaveRequiredError" class="text-danger" style="display: none;">This field is required.</div>
         </div>
     </div>
 
@@ -123,53 +140,43 @@
 
 <script>
     function validateForm() {
-        const nameInput = document.getElementById('name');
-        const nameError = document.getElementById('nameError');
-        const phoneInput = document.getElementById('phone_number');
-        const phoneError = document.getElementById('phoneError');
-        const emailInput = document.getElementById('email');
-        const emailError = document.getElementById('emailError');
-        const salaryInput = document.getElementById('salary');
-        const salaryError = document.getElementById('salaryError');
-
-        const namePattern = /^[A-Za-z\s]+$/;
-        const phonePattern = /^\d{1,18}$/;
-        const emailPattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-        const salaryPattern = /^\d+(\.\d{1,2})?$/;
+        const fields = [
+            {id: 'name', pattern: /^[A-Za-z\s]+$/, error: 'nameError', requiredError: 'nameRequiredError'},
+            {id: 'phone_number', pattern: /^\d{1,18}$/, error: 'phoneError', requiredError: 'phoneRequiredError'},
+            {id: 'email', pattern: /^[^\s@]+@[^\s@]+\.[^\s@]+$/, error: 'emailError', requiredError: 'emailRequiredError'},
+            {id: 'salary', pattern: /^\d+(\.\d{1,2})?$/, error: 'salaryError', requiredError: 'salaryRequiredError'},
+        ];
 
         let valid = true;
 
-        if (!namePattern.test(nameInput.value)) {
-            nameError.style.display = 'block';
-            valid = false;
-        } else {
-            nameError.style.display = 'none';
-        }
+        fields.forEach(field => {
+            const input = document.getElementById(field.id);
+            const error = document.getElementById(field.error);
+            const requiredError = document.getElementById(field.requiredError);
 
-        if (!phonePattern.test(phoneInput.value)) {
-            phoneError.style.display = 'block';
-            valid = false;
-        } else {
-            phoneError.style.display = 'none';
-        }
-
-        if (!emailPattern.test(emailInput.value)) {
-            emailError.style.display = 'block';
-            valid = false;
-        } else {
-            emailError.style.display = 'none';
-        }
-
-        if (!salaryPattern.test(salaryInput.value)) {
-            salaryError.style.display = 'block';
-            valid = false;
-        } else {
-            salaryError.style.display = 'none';
-        }
+            if (input.value === '') {
+                requiredError.style.display = 'block';
+                error.style.display = 'none';
+                valid = false;
+            } else {
+                requiredError.style.display = 'none';
+                if (!field.pattern.test(input.value)) {
+                    error.style.display = 'block';
+                    valid = false;
+                } else {
+                    error.style.display = 'none';
+                }
+            }
+        });
 
         return valid;
     }
-</script>
 
+    const inputs = ['name', 'phone_number', 'email', 'salary'];
+
+    inputs.forEach(id => {
+        document.getElementById(id).addEventListener('input', () => validateForm());
+    });
+</script>
 
 {% endblock %}
