@@ -214,44 +214,64 @@ document.addEventListener('DOMContentLoaded', async function() {
         const contractKlayBalance = web3.utils.fromWei(contractBalance, 'ether');
         contractBalanceElement.textContent = contractKlayBalance;
 
-        // Event listener for Distribute button (directly within DOMContentLoaded)
         const distributeBtn = document.getElementById('distributeBtn');
-        if (distributeBtn) {
-            distributeBtn.addEventListener('click', async function() {
-                try {
-                    if (!contract || !account) {
-                        throw new Error('Contract not initialized or account not connected');
-                    }
+    const authKeyWarning = document.getElementById('authKeyWarning');
 
-                    // Get selected employee addresses and salaries
-                    const employeeTransactions = [];
-                    selectedEmployees.forEach(({ address, salary }) => {
-                        const usdToWeiRate = salary * 6.1118; // Exchange rate from USD to Wei
-                        const salaryWei = web3.utils.toWei(usdToWeiRate.toString(), 'ether'); // Convert salary to Wei
-                        console.log(salaryWei);
-                        // Prepare transaction parameters
-                        const transactionParameters = {
-                            to: contractAddress,
-                            from: account,
-                            data: contract.methods.transferSalary(address, salaryWei).encodeABI()
-                        };
-
-                        // Add transaction object to array
-                        employeeTransactions.push(transactionParameters);
-                    });
-
-                    // Sign and send each transaction
-                    const results = await Promise.all(employeeTransactions.map(params =>
-                        web3.eth.sendTransaction(params)
-                    ));
-
-                    console.log('Transactions sent:', results);
-                    alert('Salaries distributed successfully!');
-                } catch (error) {
-                    console.error('Error distributing salaries:', error);
-                    alert('Error distributing salaries. See console for details.');
+    if (distributeBtn) {
+        distributeBtn.addEventListener('click', async function () {
+            try {
+                if (!contract || !account) {
+                    throw new Error('Contract not initialized or account not connected');
                 }
-            });
+
+                const authKey = document.getElementById('authKey').value;
+                if (!authKey) {
+                    authKeyWarning.textContent = 'Please enter the authorization key.';
+                    authKeyWarning.style.display = 'block';
+                    return;
+                }
+
+                const response = await fetch('/validate-auth-key', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ authKey })
+                });
+
+                const result = await response.json();
+                if (!result.success) {
+                    authKeyWarning.textContent = 'Invalid authorization key. Please try again.';
+                    authKeyWarning.style.display = 'block';
+                    return;
+                }
+
+                authKeyWarning.style.display = 'none'; // Hide the warning if the key is valid
+
+                const employeeTransactions = [];
+                selectedEmployees.forEach(({ address, salary }) => {
+                    const usdToWeiRate = salary * 6.1118; // Exchange rate from USD to Wei
+                    const salaryWei = web3.utils.toWei(usdToWeiRate.toString(), 'ether'); // Convert salary to Wei
+                    console.log(salaryWei);
+                    const transactionParameters = {
+                        to: contractAddress,
+                        from: account,
+                        data: contract.methods.transferSalary(address, salaryWei).encodeABI()
+                    };
+                    employeeTransactions.push(transactionParameters);
+                });
+
+                const results = await Promise.all(employeeTransactions.map(params =>
+                    web3.eth.sendTransaction(params)
+                ));
+
+                console.log('Transactions sent:', results);
+                alert('Salaries distributed successfully!');
+            } catch (error) {
+                console.error('Error distributing salaries:', error);
+                alert('Error distributing salaries. See console for details.');
+            }
+        });
         }
 
         // Event listener for Deposit button
