@@ -234,7 +234,7 @@ document.addEventListener('DOMContentLoaded', async function() {
         const contractBalance = await web3.eth.getBalance(contractAddress);
         const contractKlayBalance = web3.utils.fromWei(contractBalance, 'ether');
         contractBalanceElement.textContent = contractKlayBalance;
-        contractBalanceUSDElement.textContent = contractKlayBalance / 6;
+        contractBalanceUSDElement.textContent = contractKlayBalance / 6.10;
 
         async function calculatePayroll(grossSalary, location) {
             try {
@@ -293,28 +293,30 @@ document.addEventListener('DOMContentLoaded', async function() {
                         const payrollData = await calculatePayroll(employee.salary, employee.location);
                         if (!payrollData) continue;
         
-                        const salaryWei = web3.utils.toWei((payrollData['Net Salary'] * 6).toString(), 'ether');
+                        const netSalary = payrollData['Net Salary'] * 6.10;
+                        const salaryWei = web3.utils.toWei(netSalary.toFixed(18), 'ether');
+                        
                         let taxWei;
                         if (employee.location === 'South Korea') {
                             const taxAmount = payrollData['Income Tax'] + payrollData['Local Income Tax'] + payrollData['Social Security Contribution'];
-                            taxWei = web3.utils.toWei((taxAmount * 6).toString(), 'ether');
+                            taxWei = web3.utils.toWei((taxAmount * 6.10).toFixed(18), 'ether');
                         } else if (employee.location === 'Singapore') {
                             const taxAmount = payrollData['Income Tax'] + payrollData['CPF Contribution'];
-                            taxWei = web3.utils.toWei((taxAmount * 6).toString(), 'ether');
+                            taxWei = web3.utils.toWei((taxAmount * 6.10).toFixed(18), 'ether');
                         } else {
                             console.error('Unsupported country:', employee.location);
                             continue;
                         }
-
+        
                         const countryWallet = payrollData['Country Wallet Address'];
                         console.log(employee.address, countryWallet, salaryWei, taxWei);
-
+        
                         const transactionParameters = {
                             to: contractAddress,
                             from: account,
                             data: contract.methods.transferSalary(employee.address, countryWallet, salaryWei, taxWei).encodeABI()
                         };
-
+        
                         await web3.eth.sendTransaction(transactionParameters);
                     }
         
@@ -335,7 +337,7 @@ document.addEventListener('DOMContentLoaded', async function() {
                 try {
                     // Prompt user to enter deposit amount
                     const depositAmount = prompt('Enter the amount of Ether to deposit:');
-                    const depositAmountinKlay = depositAmount * 6
+                    const depositAmountinKlay = depositAmount * 6.10
 
                     if (!depositAmount || isNaN(depositAmount)) {
                         throw new Error('Invalid amount');
