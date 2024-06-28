@@ -234,101 +234,102 @@ document.addEventListener('DOMContentLoaded', async function() {
         const contractBalance = await web3.eth.getBalance(contractAddress);
         const contractKlayBalance = web3.utils.fromWei(contractBalance, 'ether');
         contractBalanceElement.textContent = contractKlayBalance;
-        contractBalanceUSDElement.textContent = contractKlayBalance / 6.10;
+        
+        var exchangerate = 6.10
+        contractBalanceUSDElement.textContent = contractKlayBalance / exchangerate;
 
-        async function calculatePayroll(grossSalary, location) {
-            try {
-                const response = await fetch('/calculate_payroll', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ gross_salary: grossSalary, location: location })
-                });
-        
-                if (!response.ok) {
-                    throw new Error(`HTTP error! status: ${response.status}`);
-                }
-        
-                const data = await response.json();
-                console.log(data);
-                return data;
-            } catch (error) {
-                console.error('Error calculating payroll:', error);
-                console.log('Error details:', error.message);
-                return null;
-            }
-        }
-        
-        if (distributeBtn) {
-            distributeBtn.addEventListener('click', async function() {
-                try {
-                    if (!contract || !account) {
-                        throw new Error('Contract not initialized or account not connected');
-                    }
-        
-                    const authKey = document.getElementById('authKey').value;
-                    if (!authKey) {
-                        authKeyWarning.textContent = 'Please enter the authorization key.';
-                        authKeyWarning.style.display = 'block';
-                        return;
-                    }
-        
-                    const response = await fetch('/validate-auth-key', {
-                        method: 'POST',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ authKey })
-                    });
-        
-                    const result = await response.json();
-                    if (!result.success) {
-                        authKeyWarning.textContent = 'Invalid authorization key. Please try again.';
-                        authKeyWarning.style.display = 'block';
-                        return;
-                    }
-        
-                    authKeyWarning.style.display = 'none'; // Hide the warning if the key is valid
-        
-                    for (const employee of selectedEmployees) {
-                        const payrollData = await calculatePayroll(employee.salary, employee.location);
-                        if (!payrollData) continue;
-        
-                        const netSalary = payrollData['Net Salary'] * 6.10;
-                        const salaryWei = web3.utils.toWei(netSalary.toFixed(18), 'ether');
-                        
-                        let taxWei;
-                        if (employee.location === 'South Korea') {
-                            const taxAmount = payrollData['Income Tax'] + payrollData['Local Income Tax'] + payrollData['Social Security Contribution'];
-                            taxWei = web3.utils.toWei((taxAmount * 6.10).toFixed(18), 'ether');
-                        } else if (employee.location === 'Singapore') {
-                            const taxAmount = payrollData['Income Tax'] + payrollData['CPF Contribution'];
-                            taxWei = web3.utils.toWei((taxAmount * 6.10).toFixed(18), 'ether');
-                        } else {
-                            console.error('Unsupported country:', employee.location);
-                            continue;
-                        }
-        
-                        const countryWallet = payrollData['Country Wallet Address'];
-                        console.log(employee.address, countryWallet, salaryWei, taxWei);
-        
-                        const transactionParameters = {
-                            to: contractAddress,
-                            from: account,
-                            data: contract.methods.transferSalary(employee.address, countryWallet, salaryWei, taxWei).encodeABI()
-                        };
-        
-                        await web3.eth.sendTransaction(transactionParameters);
-                    }
-        
-                    console.log('Transactions sent');
-                    location.reload();
-                    alert('Salaries and taxes distributed successfully!');
-                } catch (error) {
-                    console.error('Error distributing salaries:', error);
-                    alert('Error distributing salaries. See console for details.');
-                }
+        // Function to calculate payroll
+    async function calculatePayroll(grossSalary, location) {
+        try {
+            const response = await fetch('/calculate_payroll', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({ gross_salary: grossSalary, location: location })
             });
+    
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+    
+            const data = await response.json();
+            console.log(data);
+            return data;
+        } catch (error) {
+            console.error('Error calculating payroll:', error);
+            return null;
         }
+    }
+    
+    if (distributeBtn) {
+        distributeBtn.addEventListener('click', async function() {
+            try {
+                if (!contract || !account) {
+                    throw new Error('Contract not initialized or account not connected');
+                }
+    
+                const authKey = document.getElementById('authKey').value;
+                if (!authKey) {
+                    authKeyWarning.textContent = 'Please enter the authorization key.';
+                    authKeyWarning.style.display = 'block';
+                    return;
+                }
+    
+                const response = await fetch('/validate-auth-key', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ authKey })
+                });
+    
+                const result = await response.json();
+                if (!result.success) {
+                    authKeyWarning.textContent = 'Invalid authorization key. Please try again.';
+                    authKeyWarning.style.display = 'block';
+                    return;
+                }
+    
+                authKeyWarning.style.display = 'none'; // Hide the warning if the key is valid
+    
+                for (const employee of selectedEmployees) {
+                    const payrollData = await calculatePayroll(employee.salary, employee.location);
+                    if (!payrollData) continue;
+    
+                    const netSalary = payrollData['Net Salary'] * exchangerate;
+                    const roundedNetSalary = netSalary.toFixed(2);  // Round to 2 decimal places
+                    const salaryWei = web3.utils.toWei(roundedNetSalary.toString(), 'ether');
+                    
+                    let taxWei;
+                    if (employee.location === 'South Korea' || employee.location === 'Singapore') {
+                        const totalTaxes = payrollData['Total Taxes'];
+                        const roundedTotalTaxes = (totalTaxes * exchangerate).toFixed(2);  // Round to 2 decimal places
+                        taxWei = web3.utils.toWei(roundedTotalTaxes.toString(), 'ether');
+                    } else {
+                        console.error('Unsupported country:', employee.location);
+                        continue;
+                    }
+    
+                    const countryWallet = payrollData['Country Wallet Address'];
+                    console.log(employee.address, countryWallet, salaryWei, taxWei);
+    
+                    const transactionParameters = {
+                        to: contractAddress,
+                        from: account,
+                        data: contract.methods.transferSalary(employee.address, countryWallet, salaryWei, taxWei).encodeABI()
+                    };
+    
+                    await web3.eth.sendTransaction(transactionParameters);
+                }
+    
+                console.log('Transactions sent');
+                location.reload();
+                alert('Salaries and taxes distributed successfully!');
+            } catch (error) {
+                console.error('Error distributing salaries:', error);
+                alert('Error distributing salaries. See console for details.');
+            }
+        });
+    }
 
         // Event listener for Deposit button
         const depositBtn = document.getElementById('depositBtn');
@@ -337,7 +338,7 @@ document.addEventListener('DOMContentLoaded', async function() {
                 try {
                     // Prompt user to enter deposit amount
                     const depositAmount = prompt('Enter the amount of Ether to deposit:');
-                    const depositAmountinKlay = depositAmount * 6.10
+                    const depositAmountinKlay = depositAmount * exchangerate
 
                     if (!depositAmount || isNaN(depositAmount)) {
                         throw new Error('Invalid amount');

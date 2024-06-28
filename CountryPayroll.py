@@ -19,9 +19,9 @@ class SouthKoreaPayroll:
         brackets = [
             (12000000, 0.06),
             (34000000, 0.15),
-            (42000000, 0.24),
+            (42000000, 0.25),
             (212000000, 0.35),
-            (float('inf'), 0.38)
+            (float('inf'), 0.40)
         ]
         
         tax = 0
@@ -43,20 +43,25 @@ class SouthKoreaPayroll:
         # Assuming a combined rate for National Pension, Health Insurance, and Employment Insurance
         # National Pension: 4.5%
         # Health Insurance: 3.5%
-        # Employment Insurance: 0.80%
+        # Employment Insurance: 1.0%
         # Total: 8.8%
         return gross_salary * 0.088
 
     def calculate_net_salary(self):
         self.net_salary = (self.gross_salary - self.income_tax - self.local_income_tax - self.social_security_contribution)
 
+    def calculate_total_taxes(self):
+        return self.income_tax + self.local_income_tax + self.social_security_contribution
+    
     def get_salary_breakdown(self):
         return {
             "Gross Salary": self.gross_salary,
             "Income Tax": self.income_tax,
             "Local Income Tax": self.local_income_tax,
             "Social Security Contribution": self.social_security_contribution,
-            "Net Salary": self.net_salary
+            "Net Salary": self.net_salary,
+            "Total Taxes": self.calculate_total_taxes(),
+            "Country Wallet Address": self.wallet_address  # Example field, update as needed
         }
 
 class SingaporePayroll:
@@ -107,11 +112,16 @@ class SingaporePayroll:
 
     def calculate_net_salary(self):
         self.net_salary = self.gross_salary - self.income_tax - self.cpf_contribution
+        
+    def calculate_total_taxes(self):
+        return self.income_tax + self.cpf_contribution
 
     def get_salary_breakdown(self):
         return {
             "Gross Salary": self.gross_salary,
             "Income Tax": self.income_tax,
             "CPF Contribution": self.cpf_contribution,
-            "Net Salary": self.net_salary
+            "Net Salary": self.net_salary,
+            "Total Taxes": self.calculate_total_taxes(),
+            "Country Wallet Address": self.wallet_address  # Example field, update as needed
         }
