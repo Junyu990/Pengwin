@@ -1,4 +1,5 @@
 from flask import Flask, jsonify, render_template, request, redirect, url_for, flash
+from flask_cors import CORS
 import firebase_admin
 from firebase_admin import credentials, firestore
 from datetime import date
@@ -6,9 +7,13 @@ from datetime import datetime
 import json
 import re
 
+from CountryPayroll import *
+
 
 
 app = Flask(__name__)
+CORS(app)
+
 app.secret_key = 'your_secret_key'
 app.static_folder = 'static'
 
@@ -171,6 +176,31 @@ def pending_salaries():
         pending_salaries.append(salary_data)
     
     return render_template('pending_salaries.html', pending_salaries=pending_salaries)
+
+@app.route('/calculate_payroll', methods=['POST'])
+def calculate_payroll():
+    try:
+        data = request.json
+        gross_salary = data['gross_salary']
+        location = data['location']
+
+        if location == 'South Korea':
+            wallet_address = "0x7f3bEF0bF9DE7545e3A686674834716f8379aB3A"
+            payroll = SouthKoreaPayroll(gross_salary, wallet_address)
+        elif location == 'Singapore':
+            wallet_address = "0x9091700FCfD4D0120d66Ad5a1638738A885CA813"
+            payroll = SingaporePayroll(gross_salary, wallet_address)
+        else:
+            return jsonify({"error": "Invalid location"}), 400
+
+        payroll_data = payroll.get_salary_breakdown()
+        payroll_data["Country Wallet Address"] = wallet_address
+
+        return jsonify(payroll_data)
+    except Exception as e:
+        print(f"Error calculating payroll: {e}")
+        return jsonify({"error": str(e)}), 500
+
 
 @app.route('/validate-auth-key', methods=['POST'])
 def validate_auth_key():
