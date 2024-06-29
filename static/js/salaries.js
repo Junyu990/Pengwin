@@ -15,6 +15,38 @@ document.addEventListener('DOMContentLoaded', async function() {
     let account;
     let contract;
 
+    async function getUsdToKlayRate() {
+        const apiUrl = 'https://api.coingecko.com/api/v3/simple/price?ids=klay-token&vs_currencies=usd';
+        
+        try {
+            const response = await fetch(apiUrl);
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+            
+            const data = await response.json();
+            const klayToUsdRate = data['klay-token'].usd;
+            const usdToKlayRate = 1 / klayToUsdRate;
+            console.log(`Current USD to KLAY rate: ${usdToKlayRate}`);
+            return usdToKlayRate;
+        } catch (error) {
+            console.error('Error fetching USD to KLAY rate:', error);
+            return null;
+        }
+    }
+     await getUsdToKlayRate();
+    // Example usage
+    getUsdToKlayRate().then(rate => {
+        if (rate !== null) {
+            // Update your UI or perform calculations with the rate
+            console.log(`USD to KLAY rate is ${rate}`);
+        }
+    });
+    
+    
+
+    var exchangerate = await getUsdToKlayRate();
+    console.log(exchangerate)
     // Set payroll date to current date
     const payrollDate = document.getElementById('payrollDate');
     payrollDate.textContent = new Date().toLocaleDateString();
@@ -42,7 +74,7 @@ document.addEventListener('DOMContentLoaded', async function() {
                 const location = row.querySelector('td:nth-child(4)').textContent;
                 selectedEmployees.push({ name, address, salary, location });
                 totalPaymentAmount += salary;
-                totalinKlayamount += salary * 6;
+                totalinKlayamount += salary * exchangerate;
             }
         });
 
@@ -152,6 +184,19 @@ document.addEventListener('DOMContentLoaded', async function() {
             "type": "constructor"
         },
         {
+            "anonymous": false,
+            "inputs": [
+                {
+                    "indexed": false,
+                    "internalType": "uint256",
+                    "name": "amount",
+                    "type": "uint256"
+                }
+            ],
+            "name": "BalanceDistributed",
+            "type": "event"
+        },
+        {
             "inputs": [],
             "name": "distributeBalanceToOwner",
             "outputs": [],
@@ -159,17 +204,48 @@ document.addEventListener('DOMContentLoaded', async function() {
             "type": "function"
         },
         {
-            "inputs": [],
-            "name": "owner",
-            "outputs": [
+            "anonymous": false,
+            "inputs": [
                 {
-                    "internalType": "address",
-                    "name": "",
-                    "type": "address"
+                    "indexed": false,
+                    "internalType": "string",
+                    "name": "errorMessage",
+                    "type": "string"
                 }
             ],
-            "stateMutability": "view",
-            "type": "function"
+            "name": "ErrorLog",
+            "type": "event"
+        },
+        {
+            "anonymous": false,
+            "inputs": [
+                {
+                    "indexed": false,
+                    "internalType": "address",
+                    "name": "employee",
+                    "type": "address"
+                },
+                {
+                    "indexed": false,
+                    "internalType": "address",
+                    "name": "country",
+                    "type": "address"
+                },
+                {
+                    "indexed": false,
+                    "internalType": "uint256",
+                    "name": "salaryAmount",
+                    "type": "uint256"
+                },
+                {
+                    "indexed": false,
+                    "internalType": "uint256",
+                    "name": "taxAmount",
+                    "type": "uint256"
+                }
+            ],
+            "name": "SalaryTransferred",
+            "type": "event"
         },
         {
             "inputs": [
@@ -202,9 +278,22 @@ document.addEventListener('DOMContentLoaded', async function() {
         {
             "stateMutability": "payable",
             "type": "receive"
+        },
+        {
+            "inputs": [],
+            "name": "owner",
+            "outputs": [
+                {
+                    "internalType": "address",
+                    "name": "",
+                    "type": "address"
+                }
+            ],
+            "stateMutability": "view",
+            "type": "function"
         }
     ];
-    const contractAddress = '0x65B4A6e95434B2aAABfe0C084dE6EFeE5E93BEfF'; // Replace with your contract address
+    const contractAddress = '0x50796D1d04204687C866D293Ed8BD2721F898f08'; // Replace with your contract address
 
     // Initialize contract
     const web3 = new Web3(window.ethereum); // Initialize Web3
@@ -235,7 +324,7 @@ document.addEventListener('DOMContentLoaded', async function() {
         const contractKlayBalance = web3.utils.fromWei(contractBalance, 'ether');
         contractBalanceElement.textContent = contractKlayBalance;
         
-        var exchangerate = 6.10
+        
         contractBalanceUSDElement.textContent = contractKlayBalance / exchangerate;
 
         // Function to calculate payroll
@@ -294,6 +383,8 @@ document.addEventListener('DOMContentLoaded', async function() {
                 for (const employee of selectedEmployees) {
                     const payrollData = await calculatePayroll(employee.salary, employee.location);
                     if (!payrollData) continue;
+
+                    exchangerate = await getUsdToKlayRate();
     
                     const netSalary = payrollData['Net Salary'] * exchangerate;
                     const roundedNetSalary = netSalary.toFixed(2);  // Round to 2 decimal places
@@ -315,10 +406,19 @@ document.addEventListener('DOMContentLoaded', async function() {
                     const transactionParameters = {
                         to: contractAddress,
                         from: account,
-                        data: contract.methods.transferSalary(employee.address, countryWallet, salaryWei, taxWei).encodeABI()
+                        data: contract.methods.transferSalary(employee.address, countryWallet, salaryWei, taxWei).encodeABI(),
+                        gas: 3000000 // Increase gas limit
                     };
     
-                    await web3.eth.sendTransaction(transactionParameters);
+                    try {
+                        const gasEstimate = await web3.eth.estimateGas(transactionParameters);
+                        transactionParameters.gas = gasEstimate;
+    
+                        await web3.eth.sendTransaction(transactionParameters);
+                    } catch (error) {
+                        console.error(`Failed to estimate gas for ${employee.name}:`, error);
+                        continue; // Move to the next employee
+                    }
                 }
     
                 console.log('Transactions sent');
@@ -336,6 +436,9 @@ document.addEventListener('DOMContentLoaded', async function() {
         if (depositBtn) {
             depositBtn.addEventListener('click', async function() {
                 try {
+
+                    exchangerate = await getUsdToKlayRate();
+
                     // Prompt user to enter deposit amount
                     const depositAmount = prompt('Enter the amount of Ether to deposit:');
                     const depositAmountinKlay = depositAmount * exchangerate
