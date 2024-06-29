@@ -55,8 +55,12 @@
             <td>{{ request['days_requested'] }}</td>
             <td>
                 {% if request['status'] == 'Pending' %}
-                <a href="{{ url_for('approve_leave', request_id=request['request_id']) }}" class="btn btn-success">Approve</a>
-                <a href="{{ url_for('reject_leave', request_id=request['request_id']) }}" class="btn btn-danger">Reject</a>
+                <form action="{{ url_for('approve_leave', request_id=request['request_id']) }}" method="post" style="display:inline;">
+                    <button type="submit" class="btn btn-success">Approve</button>
+                </form>
+                <form action="{{ url_for('reject_leave', request_id=request['request_id']) }}" method="post" style="display:inline;">
+                    <button type="submit" class="btn btn-danger">Reject</button>
+                </form>
                 {% endif %}
             </td>
         </tr>

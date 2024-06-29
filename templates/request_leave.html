@@ -26,7 +26,7 @@
 </nav>
 
 <h1>Request Leave</h1>
-<form method="POST" action="{{ url_for('request_leave') }}">
+<form method="POST" action="{{ url_for('request_leave') }}" enctype="multipart/form-data">
     <div class="form-group">
         <label for="employee_id">Employee ID:</label>
         <select class="form-control" id="employee_id" name="employee_id" onchange="updateName()">
@@ -41,12 +41,16 @@
     </div>
     <div class="form-group">
         <label for="leave_type">Leave Type:</label>
-        <select class="form-control" id="leave_type" name="leave_type">
+        <select class="form-control" id="leave_type" name="leave_type" onchange="toggleFileInput()">
             <option value="Annual Leave">Annual Leave</option>
             <option value="Unpaid Leave">Unpaid Leave</option>
             <option value="Compassionate Leave">Compassionate Leave</option>
             <option value="Medical Leave">Medical Leave</option>
         </select>
+    </div>
+    <div class="form-group" id="file-group" style="display: none;">
+        <label for="file">Medical Certificate:</label>
+        <input type="file" class="form-control" id="file" name="file">
     </div>
     <div class="form-group">
         <label for="start_date">Start Date:</label>
@@ -65,11 +69,23 @@
 <a href="{{ url_for('view_all_leaves') }}">Back to Leave Overview</a>
 
 <script>
+var employees = {{ employees|tojson }};
+
 function updateName() {
     var selectedId = document.getElementById("employee_id").value;
     var nameInput = document.getElementById("name");
     var selectedEmployee = employees.find(employee => employee.id === selectedId);
     nameInput.value = selectedEmployee.name;
+}
+
+function toggleFileInput() {
+    var leaveType = document.getElementById("leave_type").value;
+    var fileGroup = document.getElementById("file-group");
+    if (leaveType === "Medical Leave") {
+        fileGroup.style.display = "block";
+    } else {
+        fileGroup.style.display = "none";
+    }
 }
 </script>
 {% endblock %}
