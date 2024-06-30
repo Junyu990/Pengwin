@@ -68,11 +68,12 @@ document.addEventListener('DOMContentLoaded', async function() {
         checkboxes.forEach(checkbox => {
             if (checkbox.checked) {
                 const row = checkbox.closest('tr');
+                const employee_id = checkbox.value; // Assuming employee_id is stored in the value attribute
                 const name = row.querySelector('td:nth-child(2)').textContent;
                 const address = row.querySelector('td:nth-child(3)').textContent;
                 const salary = parseFloat(row.querySelector('td:nth-child(6)').textContent.replace('$', ''));
                 const location = row.querySelector('td:nth-child(4)').textContent;
-                selectedEmployees.push({ name, address, salary, location });
+                selectedEmployees.push({ id: employee_id, name, address, salary, location });
                 totalPaymentAmount += salary;
                 totalinKlayamount += salary * exchangerate;
             }
@@ -350,10 +351,54 @@ document.addEventListener('DOMContentLoaded', async function() {
             return null;
         }
     }
+
+    async function recordTaxTransfer(employee, payrollData, taxWei) {
+        exchangerate = await getUsdToKlayRate();
+        const taxUSD = parseFloat(web3.utils.fromWei(taxWei, 'ether')) / exchangerate;
+        
+        // Extract the employee_id from the employee object
+        const employee_id = employee.id;  // Ensure employee.id contains the correct value
+    
+        let taxData = {
+            employee_id: employee_id,
+            tax_amount_klay: web3.utils.fromWei(taxWei, 'ether'),
+            tax_amount_usd: taxUSD.toFixed(2),
+            timestamp: new Date().toISOString(),
+            country: employee.location
+        };
+    
+        // Add country-specific tax details
+        if (employee.location === 'South Korea') {
+            taxData.income_tax = payrollData["Income Tax"];
+            taxData.local_income_tax = payrollData["Local Income Tax"];
+            taxData.social_security_contribution = payrollData["Social Security Contribution"];
+        } else if (employee.location === 'Singapore') {
+            taxData.income_tax = payrollData["Income Tax"];
+            taxData.cpf_contribution = payrollData["CPF Contribution"];
+        }
+    
+        try {
+            const response = await fetch('/record_tax_transfer', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify(taxData)
+            });
+    
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status}`);
+            }
+    
+            console.log('Tax transfer recorded successfully');
+        } catch (error) {
+            console.error('Error recording tax transfer:', error);
+        }
+    }
+    
     
     if (distributeBtn) {
         distributeBtn.addEventListener('click', async function() {
-            try {
                 if (!contract || !account) {
                     throw new Error('Contract not initialized or account not connected');
                 }
@@ -413,21 +458,26 @@ document.addEventListener('DOMContentLoaded', async function() {
                     try {
                         const gasEstimate = await web3.eth.estimateGas(transactionParameters);
                         transactionParameters.gas = gasEstimate;
-    
-                        await web3.eth.sendTransaction(transactionParameters);
+
+
                     } catch (error) {
                         console.error(`Failed to estimate gas for ${employee.name}:`, error);
                         continue; // Move to the next employee
                     }
+
+                    try{
+                        await web3.eth.sendTransaction(transactionParameters);
+
+                        // Record the tax transfer in Firebase
+                        await recordTaxTransfer(employee, payrollData, taxWei);
+                    } catch (error) {
+                        console.error(`Error Storing ${employee.name}:`, error);
+                        continue; // Move to the next employee
+                    }
                 }
     
-                console.log('Transactions sent');
                 location.reload();
                 alert('Salaries and taxes distributed successfully!');
-            } catch (error) {
-                console.error('Error distributing salaries:', error);
-                alert('Error distributing salaries. See console for details.');
-            }
         });
     }
 
@@ -459,6 +509,8 @@ document.addEventListener('DOMContentLoaded', async function() {
 
                     // Send transaction
                     const result = await web3.eth.sendTransaction(transactionParameters);
+
+
 
                     console.log('Deposit transaction result:', result);
                     location.reload();

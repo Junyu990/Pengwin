@@ -12,7 +12,6 @@ from CountryPayroll import *
 
 
 app = Flask(__name__)
-CORS(app)
 
 app.secret_key = 'your_secret_key'
 app.static_folder = 'static'
@@ -213,15 +212,114 @@ def validate_auth_key():
     else:
         return jsonify({'success': False})
 
-@app.route('/tax-authorisation')
-def tax_authorisation():
-    return render_template('tax_authorisation.html')
+@app.route('/tax-transfers')
+def tax_transfers():
+    try:
+        tax_transfers_ref = db.collection('taxtransfers')
+        countries = tax_transfers_ref.stream()
+        
+        print("Tax Transfers Reference:", tax_transfers_ref)
+        
+        tax_dict = []
+        for country_doc in countries:
+            country_id = country_doc.id
+            print(f"Country ID: {country_id}")  # Debugging statement
+            
+            employees_ref = country_doc.reference.collection('employees').stream()
+            employees_found = False
+            
+            for employee_doc in employees_ref:
+                employees_found = True
+                print(f"Employee ID: {employee_doc.id}")  # Debugging statement
+                tax_transfer_data = employee_doc.to_dict()
+                tax_transfer_data['country'] = country_id
+                tax_transfer_data['employee_id'] = employee_doc.id
+                
+                # Calculate total tax based on country
+                if country_id == 'South Korea':
+                    total_tax = (
+                        tax_transfer_data.get('income_tax', 0) +
+                        tax_transfer_data.get('local_income_tax', 0) +
+                        tax_transfer_data.get('social_security_contribution', 0)
+                    )
+                elif country_id == 'Singapore':
+                    total_tax = (
+                        tax_transfer_data.get('income_tax', 0) +
+                        tax_transfer_data.get('cpf_contribution', 0)
+                    )
+                else:
+                    # Default calculation if country is not specifically handled
+                    total_tax = (
+
+                    )
+                
+                tax_transfer_data['total_tax'] = total_tax
+                
+                tax_dict.append(tax_transfer_data)
+            
+            if not employees_found:
+                print(f"No employees found for country {country_id}")
+        
+        if not tax_dict:
+            print("No tax transfers found.")
+        
+        print(f"Tax Transfers: {tax_dict}")  # Debugging statement to print data to console
+        return render_template('tax_transfers.html', tax_dict=tax_dict)
+    except Exception as e:
+        print("Error retrieving tax transfers:", e)
+        return render_template('tax_transfers.html', tax_dict=[])
+
+    
+@app.route('/record_tax_transfer', methods=['POST'])
+def record_tax_transfer():
+    try:
+        data = request.json
+        print("Received data:", data)  # Add logging to debug the received data
+        
+        employee_id = data['employee_id']
+        tax_amount_klay = data['tax_amount_klay']
+        tax_amount_usd = data['tax_amount_usd']
+        timestamp = data['timestamp']
+        country = data['country']
+        country_name = data['country']  # Get the country name from the request
+
+        tax_transfer_data = {
+            'tax_amount_klay': tax_amount_klay,
+            'tax_amount_usd': tax_amount_usd,
+            'timestamp': timestamp,
+            'country_name': country_name  # Add country name to tax transfer data
+        }
+
+        # Add country-specific tax details
+        if country == 'South Korea':
+            tax_transfer_data['income_tax'] = data.get('income_tax', 0)
+            tax_transfer_data['local_income_tax'] = data.get('local_income_tax', 0)
+            tax_transfer_data['social_security_contribution'] = data.get('social_security_contribution', 0)
+        elif country == 'Singapore':
+            tax_transfer_data['income_tax'] = data.get('income_tax', 0)
+            tax_transfer_data['cpf_contribution'] = data.get('cpf_contribution', 0)
+
+        # Record the tax transfer in Firebase
+        db.collection('taxtransfers').document(country).collection('employees').document(employee_id).set(tax_transfer_data)
+
+        # Update the country document with the country name if it doesn't exist
+        country_doc_ref = db.collection('taxtransfers').document(country)
+        country_doc = country_doc_ref.get()
+        if not country_doc.exists:
+            country_doc_ref.set({'country_name': country_name})
+
+        return jsonify({'success': True}), 200
+    except Exception as e:
+        print(f"Error recording tax transfer: {e}")
+        import traceback
+        traceback.print_exc()  # Print the traceback for debugging
+        return jsonify({'error': str(e)}), 500
+    
+    
 
 @app.route('/manage-pensions')
 def manage_pensions():
     return render_template('manage_pensions.html')
-
-@app.route('/leaves')
 
 
 @app.route('/leaves', methods=['GET'])
