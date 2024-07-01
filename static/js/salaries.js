@@ -9,6 +9,10 @@ document.addEventListener('DOMContentLoaded', async function() {
     const contractBalanceElement = document.getElementById('contractBalance'); // Element to display contract balance
     const contractBalanceUSDElement = document.getElementById('contractBalanceUSD'); // Element to display contract balance
     const distributeBalanceBtn = document.getElementById('distributeBalanceBtn');
+    const errorMessage = document.getElementById('errorMessage'); // Error message element
+    const payrollMonth = document.getElementById('payrollMonth'); // Month selector
+    const balanceErrorMessage = document.getElementById('balanceErrorMessage');
+
     
     
     let selectedEmployees = []; // Define selectedEmployees at a higher scope
@@ -118,6 +122,7 @@ document.addEventListener('DOMContentLoaded', async function() {
             };
             employeeList.appendChild(seeMoreBtn);
         }
+
     }
 
     // togglePanelBtn.addEventListener('click', showPanel);
@@ -134,8 +139,24 @@ document.addEventListener('DOMContentLoaded', async function() {
         });
     });
 
+    const selectAllCheckbox = document.getElementById('selectAll');
+
+    selectAllCheckbox.addEventListener('change', function() {
+        checkboxes.forEach(checkbox => {
+            checkbox.checked = selectAllCheckbox.checked;
+        });
+        updateSelectedEmployees();
+    });
+
     checkboxes.forEach(checkbox => {
-        checkbox.addEventListener('change', updateSelectedEmployees);
+        checkbox.addEventListener('change', function() {
+            if (!checkbox.checked) {
+                selectAllCheckbox.checked = false;
+            } else if (Array.from(checkboxes).every(cb => cb.checked)) {
+                selectAllCheckbox.checked = true;
+            }
+            updateSelectedEmployees();
+        });
     });
 
     // MetaMask wallet connection
@@ -351,23 +372,122 @@ document.addEventListener('DOMContentLoaded', async function() {
             return null;
         }
     }
-
-    async function recordTaxTransfer(employee, payrollData, taxWei) {
-        exchangerate = await getUsdToKlayRate();
-        const taxUSD = parseFloat(web3.utils.fromWei(taxWei, 'ether')) / exchangerate;
-        
-        // Extract the employee_id from the employee object
-        const employee_id = employee.id;  // Ensure employee.id contains the correct value
     
-        let taxData = {
-            employee_id: employee_id,
+    
+    if (distributeBtn) {
+        distributeBtn.addEventListener('click', async function() {
+            if (!contract || !account) {
+                throw new Error('Contract not initialized or account not connected');
+            }
+    
+            if (selectedEmployees.length === 0) {
+                errorMessage.style.display = 'block';
+                return;
+            } else {
+                errorMessage.style.display = 'none';
+            }
+    
+            const totalPaymentAmountInUSD = parseFloat(totalPayment.textContent.replace('$', ''));
+            const contractBalanceInUSD = parseFloat(contractBalanceUSDElement.textContent.replace('$', ''));
+    
+            if (totalPaymentAmountInUSD > contractBalanceInUSD) {
+                balanceErrorMessage.style.display = 'block';
+                return;
+            } else {
+                balanceErrorMessage.style.display = 'none';
+            }
+    
+            const authKey = document.getElementById('authKey').value;
+            if (!authKey) {
+                authKeyWarning.textContent = 'Please enter the authorization key.';
+                authKeyWarning.style.display = 'block';
+                return;
+            }
+    
+            const response = await fetch('/validate-auth-key', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ authKey })
+            });
+    
+            const result = await response.json();
+            if (!result.success) {
+                authKeyWarning.textContent = 'Invalid authorization key. Please try again.';
+                authKeyWarning.style.display = 'block';
+                return;
+            }
+    
+            authKeyWarning.style.display = 'none'; // Hide the warning if the key is valid
+    
+            const selectedMonth = payrollMonth.value; // Get the selected month
+    
+            for (const employee of selectedEmployees) {
+                const payrollData = await calculatePayroll(employee.salary, employee.location);
+                if (!payrollData) continue;
+    
+                exchangerate = await getUsdToKlayRate();
+    
+                const netSalary = payrollData['Net Salary'] * exchangerate;
+                const roundedNetSalary = netSalary.toFixed(2);  // Round to 2 decimal places
+                const salaryWei = web3.utils.toWei(roundedNetSalary.toString(), 'ether');
+    
+                let taxWei;
+                if (employee.location === 'South Korea' || employee.location === 'Singapore') {
+                    const totalTaxes = payrollData['Total Taxes'];
+                    const roundedTotalTaxes = (totalTaxes * exchangerate).toFixed(2);  // Round to 2 decimal places
+                    taxWei = web3.utils.toWei(roundedTotalTaxes.toString(), 'ether');
+                } else {
+                    console.error('Unsupported country:', employee.location);
+                    continue;
+                }
+    
+                const countryWallet = payrollData['Country Wallet Address'];
+                console.log(employee.address, countryWallet, salaryWei, taxWei);
+    
+                const transactionParameters = {
+                    to: contractAddress,
+                    from: account,
+                    data: contract.methods.transferSalary(employee.address, countryWallet, salaryWei, taxWei).encodeABI(),
+                    gas: 3000000 // Increase gas limit
+                };
+    
+                try {
+                    const gasEstimate = await web3.eth.estimateGas(transactionParameters);
+                    transactionParameters.gas = gasEstimate;
+                } catch (error) {
+                    console.error(`Failed to estimate gas for ${employee.name}:`, error);
+                    continue; // Move to the next employee
+                }
+    
+                try {
+                    await web3.eth.sendTransaction(transactionParameters);
+    
+                    // Record the tax transfer in Firebase
+                    await recordTaxTransfer(employee, payrollData, taxWei, selectedMonth); // Pass the selected month
+                } catch (error) {
+                    console.error(`Error Storing ${employee.name}:`, error);
+                    continue; // Move to the next employee
+                }
+            }
+    
+            location.reload();
+            alert('Salaries and taxes distributed successfully!');
+        });
+    }
+
+    async function recordTaxTransfer(employee, payrollData, taxWei, month) {
+        const exchangerate = await getUsdToKlayRate();
+        const taxUSD = parseFloat(web3.utils.fromWei(taxWei, 'ether')) / exchangerate;
+
+        const taxData = {
+            employee_id: employee.id,
             tax_amount_klay: web3.utils.fromWei(taxWei, 'ether'),
             tax_amount_usd: taxUSD.toFixed(2),
             timestamp: new Date().toISOString(),
-            country: employee.location
+            country: employee.location,
+            month: month // Include the selected month
         };
-    
-        // Add country-specific tax details
+
         if (employee.location === 'South Korea') {
             taxData.income_tax = payrollData["Income Tax"];
             taxData.local_income_tax = payrollData["Local Income Tax"];
@@ -376,7 +496,7 @@ document.addEventListener('DOMContentLoaded', async function() {
             taxData.income_tax = payrollData["Income Tax"];
             taxData.cpf_contribution = payrollData["CPF Contribution"];
         }
-    
+
         try {
             const response = await fetch('/record_tax_transfer', {
                 method: 'POST',
@@ -385,100 +505,15 @@ document.addEventListener('DOMContentLoaded', async function() {
                 },
                 body: JSON.stringify(taxData)
             });
-    
+
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status}`);
             }
-    
+
             console.log('Tax transfer recorded successfully');
         } catch (error) {
             console.error('Error recording tax transfer:', error);
         }
-    }
-    
-    
-    if (distributeBtn) {
-        distributeBtn.addEventListener('click', async function() {
-                if (!contract || !account) {
-                    throw new Error('Contract not initialized or account not connected');
-                }
-    
-                const authKey = document.getElementById('authKey').value;
-                if (!authKey) {
-                    authKeyWarning.textContent = 'Please enter the authorization key.';
-                    authKeyWarning.style.display = 'block';
-                    return;
-                }
-    
-                const response = await fetch('/validate-auth-key', {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ authKey })
-                });
-    
-                const result = await response.json();
-                if (!result.success) {
-                    authKeyWarning.textContent = 'Invalid authorization key. Please try again.';
-                    authKeyWarning.style.display = 'block';
-                    return;
-                }
-    
-                authKeyWarning.style.display = 'none'; // Hide the warning if the key is valid
-    
-                for (const employee of selectedEmployees) {
-                    const payrollData = await calculatePayroll(employee.salary, employee.location);
-                    if (!payrollData) continue;
-
-                    exchangerate = await getUsdToKlayRate();
-    
-                    const netSalary = payrollData['Net Salary'] * exchangerate;
-                    const roundedNetSalary = netSalary.toFixed(2);  // Round to 2 decimal places
-                    const salaryWei = web3.utils.toWei(roundedNetSalary.toString(), 'ether');
-                    
-                    let taxWei;
-                    if (employee.location === 'South Korea' || employee.location === 'Singapore') {
-                        const totalTaxes = payrollData['Total Taxes'];
-                        const roundedTotalTaxes = (totalTaxes * exchangerate).toFixed(2);  // Round to 2 decimal places
-                        taxWei = web3.utils.toWei(roundedTotalTaxes.toString(), 'ether');
-                    } else {
-                        console.error('Unsupported country:', employee.location);
-                        continue;
-                    }
-    
-                    const countryWallet = payrollData['Country Wallet Address'];
-                    console.log(employee.address, countryWallet, salaryWei, taxWei);
-    
-                    const transactionParameters = {
-                        to: contractAddress,
-                        from: account,
-                        data: contract.methods.transferSalary(employee.address, countryWallet, salaryWei, taxWei).encodeABI(),
-                        gas: 3000000 // Increase gas limit
-                    };
-    
-                    try {
-                        const gasEstimate = await web3.eth.estimateGas(transactionParameters);
-                        transactionParameters.gas = gasEstimate;
-
-
-                    } catch (error) {
-                        console.error(`Failed to estimate gas for ${employee.name}:`, error);
-                        continue; // Move to the next employee
-                    }
-
-                    try{
-                        await web3.eth.sendTransaction(transactionParameters);
-
-                        // Record the tax transfer in Firebase
-                        await recordTaxTransfer(employee, payrollData, taxWei);
-                    } catch (error) {
-                        console.error(`Error Storing ${employee.name}:`, error);
-                        continue; // Move to the next employee
-                    }
-                }
-    
-                location.reload();
-                alert('Salaries and taxes distributed successfully!');
-        });
     }
 
         // Event listener for Deposit button
@@ -490,7 +525,7 @@ document.addEventListener('DOMContentLoaded', async function() {
                     exchangerate = await getUsdToKlayRate();
 
                     // Prompt user to enter deposit amount
-                    const depositAmount = prompt('Enter the amount of Ether to deposit:');
+                    const depositAmount = prompt('Enter the amount of $USD to deposit:');
                     const depositAmountinKlay = depositAmount * exchangerate
 
                     if (!depositAmount || isNaN(depositAmount)) {

@@ -281,13 +281,15 @@ def record_tax_transfer():
         tax_amount_usd = data['tax_amount_usd']
         timestamp = data['timestamp']
         country = data['country']
+        month = data['month']  # Get the month from the request
         country_name = data['country']  # Get the country name from the request
 
         tax_transfer_data = {
             'tax_amount_klay': tax_amount_klay,
             'tax_amount_usd': tax_amount_usd,
             'timestamp': timestamp,
-            'country_name': country_name  # Add country name to tax transfer data
+            'country_name': country_name,  # Add country name to tax transfer data
+            'month': month  # Add month to tax transfer data
         }
 
         # Add country-specific tax details
@@ -299,8 +301,11 @@ def record_tax_transfer():
             tax_transfer_data['income_tax'] = data.get('income_tax', 0)
             tax_transfer_data['cpf_contribution'] = data.get('cpf_contribution', 0)
 
+        # Create a document ID that includes the employee ID and month
+        document_id = f"{employee_id}_{month}"
+
         # Record the tax transfer in Firebase
-        db.collection('taxtransfers').document(country).collection('employees').document(employee_id).set(tax_transfer_data)
+        db.collection('taxtransfers').document(country).collection('employees').document(document_id).set(tax_transfer_data)
 
         # Update the country document with the country name if it doesn't exist
         country_doc_ref = db.collection('taxtransfers').document(country)

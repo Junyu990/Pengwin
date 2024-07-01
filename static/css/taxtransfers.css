@@ -1,0 +1,10 @@
+.fixed-table {
+    table-layout: fixed;
+    width: 100%;
+}
+.fixed-table th, .fixed-table td {
+    word-wrap: break-word;
+}
+.employee-id-column {
+    width: 20%; /* Adjust the percentage as needed */
+}

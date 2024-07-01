@@ -40,12 +40,12 @@ class SouthKoreaPayroll:
         return income_tax * 0.10
 
     def calculate_social_security_contribution(self, gross_salary):
-        # Assuming a combined rate for National Pension, Health Insurance, and Employment Insurance
-        # National Pension: 4.5%
-        # Health Insurance: 3.5%
-        # Employment Insurance: 1.0%
-        # Total: 8.8%
-        return gross_salary * 0.088
+    # Assuming a combined rate for National Pension, Health Insurance, and Employment Insurance
+    # National Pension: 4.5%
+    # Health Insurance: 3.5%
+    # Employment Insurance: 1.0%
+    # Total: 8.8%
+        return round(gross_salary * 0.088, 2)
 
     def calculate_net_salary(self):
         self.net_salary = (self.gross_salary - self.income_tax - self.local_income_tax - self.social_security_contribution)
