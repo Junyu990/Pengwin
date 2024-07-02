@@ -2,10 +2,12 @@ from flask import Flask, jsonify, render_template, request, redirect, url_for, f
 from flask_cors import CORS
 import firebase_admin
 from firebase_admin import credentials, firestore
-from datetime import date
-from datetime import datetime
+from datetime import date, datetime
 import json
 import re
+import os
+
+
 
 from CountryPayroll import *
 
@@ -21,6 +23,7 @@ cred = credentials.Certificate("pengwin-d7fcd-firebase-adminsdk-dc2pi-34b51f5929
 firebase_admin.initialize_app(cred)
 
 db = firestore.client()
+
 
 @app.route('/')
 def index():
@@ -70,6 +73,11 @@ def add_employee():
             return redirect(url_for('add_employee'))
         
         date_of_birth = request.form['date_of_birth']
+        if not validate_date_of_birth(date_of_birth):
+            flash("Date of birth must be before the current date.", "danger")
+            return redirect(url_for('add_employee'))
+        
+        
         password = generate_password(name, date_of_birth)
         
         
@@ -131,6 +139,12 @@ def generate_unique_id(prefix):
             return new_id
     raise ValueError("Unable to generate a unique ID")
 
+def validate_date_of_birth(date_of_birth):
+    try:
+        birth_date = datetime.strptime(date_of_birth, '%Y-%m-%d').date()
+        return birth_date < date.today()
+    except ValueError:
+        return False
 
 @app.route('/employee/delete/<string:employee_id>', methods=['POST'])
 def delete_employee(employee_id):
@@ -283,13 +297,15 @@ def record_tax_transfer():
         country = data['country']
         month = data['month']  # Get the month from the request
         country_name = data['country']  # Get the country name from the request
+        year = data['year']
 
         tax_transfer_data = {
             'tax_amount_klay': tax_amount_klay,
             'tax_amount_usd': tax_amount_usd,
             'timestamp': timestamp,
             'country_name': country_name,  # Add country name to tax transfer data
-            'month': month  # Add month to tax transfer data
+            'month': month,  # Add month to tax transfer data
+            'year': year
         }
 
         # Add country-specific tax details
@@ -302,7 +318,7 @@ def record_tax_transfer():
             tax_transfer_data['cpf_contribution'] = data.get('cpf_contribution', 0)
 
         # Create a document ID that includes the employee ID and month
-        document_id = f"{employee_id}_{month}"
+        document_id = f"{employee_id}_{month}_{year}"
 
         # Record the tax transfer in Firebase
         db.collection('taxtransfers').document(country).collection('employees').document(document_id).set(tax_transfer_data)
@@ -325,6 +341,9 @@ def record_tax_transfer():
 @app.route('/manage-pensions')
 def manage_pensions():
     return render_template('manage_pensions.html')
+
+
+
 
 
 @app.route('/leaves', methods=['GET'])
@@ -488,7 +507,3 @@ class Leave:
             request['leave_id'] = doc.id
             leave_requests.append(request)
         return leave_requests
-
-
-if __name__ == '__main__':
-    app.run(debug=True)

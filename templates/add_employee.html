@@ -72,11 +72,17 @@
         <div class="col-md-6 mb-3">
             <label for="date_of_birth">Date of Birth:</label>
             <input type="date" id="date_of_birth" name="date_of_birth" class="form-control" required>
+            <div id="dateOfBirthError" class="text-danger" style="display: none;">Date of birth must be before the current date.</div>
             <div id="dateOfBirthRequiredError" class="text-danger" style="display: none;">This field is required.</div>
         </div>
         <div class="col-md-6 mb-3">
             <label for="citizenship">Citizenship:</label>
-            <input type="text" id="citizenship" name="citizenship" class="form-control" required>
+            <input list="citizenship_list" id="citizenship" name="citizenship" class="form-control" required>
+            <datalist id="citizenship_list">
+                <option value="Singaporean">
+                <option value="Korean">
+                <option value="Thailand">
+            </datalist>
             <div id="citizenshipRequiredError" class="text-danger" style="display: none;">This field is required.</div>
         </div>
     </div>
@@ -169,10 +175,30 @@
             }
         });
 
+        // Date of Birth Validation
+        const dateOfBirth = document.getElementById('date_of_birth');
+        const dateOfBirthError = document.getElementById('dateOfBirthError');
+        const dateOfBirthRequiredError = document.getElementById('dateOfBirthRequiredError');
+        const currentDate = new Date().toISOString().split('T')[0];
+
+        if (dateOfBirth.value === '') {
+            dateOfBirthRequiredError.style.display = 'block';
+            dateOfBirthError.style.display = 'none';
+            valid = false;
+        } else {
+            dateOfBirthRequiredError.style.display = 'none';
+            if (dateOfBirth.value >= currentDate) {
+                dateOfBirthError.style.display = 'block';
+                valid = false;
+            } else {
+                dateOfBirthError.style.display = 'none';
+            }
+        }
+
         return valid;
     }
 
-    const inputs = ['name', 'phone_number', 'email', 'salary'];
+    const inputs = ['name', 'phone_number', 'email', 'salary', 'date_of_birth'];
 
     inputs.forEach(id => {
         document.getElementById(id).addEventListener('input', () => validateForm());

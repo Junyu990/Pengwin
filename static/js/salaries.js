@@ -12,8 +12,6 @@ document.addEventListener('DOMContentLoaded', async function() {
     const errorMessage = document.getElementById('errorMessage'); // Error message element
     const payrollMonth = document.getElementById('payrollMonth'); // Month selector
     const balanceErrorMessage = document.getElementById('balanceErrorMessage');
-
-    
     
     let selectedEmployees = []; // Define selectedEmployees at a higher scope
     let account;
@@ -420,6 +418,8 @@ document.addEventListener('DOMContentLoaded', async function() {
             authKeyWarning.style.display = 'none'; // Hide the warning if the key is valid
     
             const selectedMonth = payrollMonth.value; // Get the selected month
+
+            const currentYear = new Date().getFullYear(); // Get the current year
     
             for (const employee of selectedEmployees) {
                 const payrollData = await calculatePayroll(employee.salary, employee.location);
@@ -463,7 +463,7 @@ document.addEventListener('DOMContentLoaded', async function() {
                     await web3.eth.sendTransaction(transactionParameters);
     
                     // Record the tax transfer in Firebase
-                    await recordTaxTransfer(employee, payrollData, taxWei, selectedMonth); // Pass the selected month
+                    await recordTaxTransfer(employee, payrollData, taxWei, selectedMonth, currentYear); // Pass the selected month
                 } catch (error) {
                     console.error(`Error Storing ${employee.name}:`, error);
                     continue; // Move to the next employee
@@ -475,7 +475,7 @@ document.addEventListener('DOMContentLoaded', async function() {
         });
     }
 
-    async function recordTaxTransfer(employee, payrollData, taxWei, month) {
+    async function recordTaxTransfer(employee, payrollData, taxWei, month, year) {
         const exchangerate = await getUsdToKlayRate();
         const taxUSD = parseFloat(web3.utils.fromWei(taxWei, 'ether')) / exchangerate;
 
@@ -485,7 +485,8 @@ document.addEventListener('DOMContentLoaded', async function() {
             tax_amount_usd: taxUSD.toFixed(2),
             timestamp: new Date().toISOString(),
             country: employee.location,
-            month: month // Include the selected month
+            month: month, // Include the selected month
+            year: year
         };
 
         if (employee.location === 'South Korea') {
